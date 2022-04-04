@@ -7,7 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter()
 
 NO_EPOCHS = 1000
-NO_STEPS = 64
+NO_STEPS = 2048
 GAMMA = 0.99
 LAMB = 0.95
 CLIP = 0.2
@@ -98,17 +98,17 @@ def discount(rewards, gamma):
 
 def update(states,actions,prob_old,vals,advs):
 
-    dist, _ = actor(state)
-    prob = dist.log_prob(action)
+    dist, _ = actor(states)
+    prob = dist.log_prob(actions)
     ratio = torch.exp(prob - prob_old)
     #PPO update
-    clip = torch.clamp(ratio, 1 - CLIP, 1 + CLIP) * adv
+    clip = torch.clamp(ratio, 1 - CLIP, 1 + CLIP) * advs
     #negative gradient descent - gradient ascent
-    actor_loss = -(torch.min(ratio * adv, clip)).mean()
+    actor_loss = -(torch.min(ratio * advs, clip)).mean()
 
-    val_new = self.critic(state)
+    vals_new = critic(states)
     #MSE
-    critic_loss = (val - val_new).pow(2).mean()
+    critic_loss = (vals - vals_new).pow(2).mean()
 
     actor_optimizer.zero_grad()
     critic_optimizer.zero_grad()
@@ -135,7 +135,6 @@ for e in range(NO_EPOCHS):
     epoch_rewards = []
     avg_reward = 0
     for i in range(NO_STEPS):
-        print("Step: ",i)
         _, action, ps, val = agent(state)
         next_state, reward, done, _ = env.step(action.item())
 
@@ -168,13 +167,19 @@ for e in range(NO_EPOCHS):
 
             epoch_rewards.append(sum(ep_rewards))
 
+    states = torch.stack((states))
+    actions = torch.stack((actions))
+    probs = torch.stack((probs))
+    vals = torch.Tensor(vals)
+    advs = torch.stack((advs))
+
     for i in range(0,NO_STEPS,batch_size):
         actor_loss, critic_loss = update(states[i:batch_size],
                                         actions[i:batch_size],
                                         probs[i:batch_size],
                                         vals[i:batch_size],
                                         advs[i:batch_size])
-    print("[ Epoch :",e,"- actor_loss:",actor_loss,", critic_loss:",critic_loss,", avg_reward:",sum(epoch_rewards)/len(epoch_rewards))
+    print("[ Epoch :",e,"- actor_loss:",actor_loss.item(),", critic_loss:",critic_loss.item(),", avg_reward:",sum(epoch_rewards)/len(epoch_rewards))
 
 
 
