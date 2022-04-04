@@ -7,7 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter()
 
 NO_EPOCHS = 1000
-NO_STEPS = 2048
+NO_STEPS = 64
 GAMMA = 0.99
 LAMB = 0.95
 CLIP = 0.2
@@ -96,7 +96,7 @@ def discount(rewards, gamma):
 
     return list(reversed(rs))
 
-def update(states,actions,probs,vals,advs):
+def update(states,actions,prob_old,vals,advs):
 
     dist, _ = actor(state)
     prob = dist.log_prob(action)
