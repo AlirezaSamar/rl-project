@@ -15,7 +15,7 @@ lr = 3e-4
 batch_size = 64
 
 class Critic(nn.Module):
-    def __init__(self,obs, hidden_size = 64):
+    def __init__(self,obs, hidden_size = 100):
         super().__init__()
 
         self.net = nn.Sequential(
@@ -98,6 +98,8 @@ def discount(rewards, gamma):
 
 def update(states,actions,prob_old,vals,advs):
 
+    advs = (advs - advs.mean())/advs.std()
+
     dist, _ = actor(states)
     prob = dist.log_prob(actions)
     ratio = torch.exp(prob - prob_old)
@@ -142,7 +144,7 @@ for e in range(NO_EPOCHS):
         actions.append(action)
         probs.append(ps)
         ep_rewards.append(reward)
-        ep_vals.append(val)
+        ep_vals.append(val.item())
 
         state = torch.Tensor(next_state)
 
@@ -152,7 +154,6 @@ for e in range(NO_EPOCHS):
 
                 #bootstrap value of last state if epoch ends early
                 with torch.no_grad():
-
                     _,_,_,val = agent(state)
                     new_val = val.item()
             else:
@@ -162,24 +163,35 @@ for e in range(NO_EPOCHS):
             ep_rewards.append(new_val)
             ep_vals.append(new_val)
 
-            vals.extend(discount(ep_rewards,GAMMA)[:-1])
-            advs.extend(gae(ep_rewards,ep_vals))
+            vals += discount(ep_rewards,GAMMA)[:-1]
+            advs += gae(ep_rewards,ep_vals)
 
             epoch_rewards.append(sum(ep_rewards))
+
+            ep_rewards.clear()
+            ep_vals.clear()
+            state = torch.Tensor(env.reset())
 
     states = torch.stack((states))
     actions = torch.stack((actions))
     probs = torch.stack((probs))
     vals = torch.Tensor(vals)
-    advs = torch.stack((advs))
+    advs = torch.Tensor(advs)
 
-    for i in range(0,NO_STEPS,batch_size):
-        actor_loss, critic_loss = update(states[i:batch_size],
-                                        actions[i:batch_size],
-                                        probs[i:batch_size],
-                                        vals[i:batch_size],
-                                        advs[i:batch_size])
-    print("[ Epoch :",e,"- actor_loss:",actor_loss.item(),", critic_loss:",critic_loss.item(),", avg_reward:",sum(epoch_rewards)/len(epoch_rewards))
+    for i in range(0,NO_STEPS-batch_size,batch_size):
+        actor_loss, critic_loss = update(states[i:i+batch_size],
+                                        actions[i:i+batch_size],
+                                        probs[i:i+batch_size],
+                                        vals[i:i+batch_size],
+                                        advs[i:i+batch_size])
+    print("[ Epoch :",e,"- actor_loss: {:.2e}".format(actor_loss.item()),", critic_loss: {:.2e}".format(critic_loss.item()),", avg_reward: {:.2f} ]".format(sum(epoch_rewards)/len(epoch_rewards)), end='\r')
+
+    writer.add_scalar("actor_loss",actor_loss,e)
+    writer.add_scalar("critic_loss",critic_loss,e)
+    writer.add_scalar("avg_reward",sum(epoch_rewards)/len(epoch_rewards),e)
+    writer.flush()
+
+writer.close()
 
 
 
