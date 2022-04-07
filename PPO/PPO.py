@@ -5,6 +5,7 @@ from torch.distributions import Categorical
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter()
+import numpy
 
 NO_EPOCHS = 1000
 NO_STEPS = 2048
