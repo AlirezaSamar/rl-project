@@ -122,6 +122,14 @@ A description of the method(s) used to solve your chosen problem, an explanation
 of how these methods work (in your own words), and an explanation of why you chose these
 specific methods.
 
+\subsection{PPO}
+
+Proximal Policy Optimization is a policy gradient method that alternates between sampling data
+through environment interactions and optimizing a ’surrogate’ objective function using ’stochastic
+gradient ascent’ (Schulman et al., 2017). The PPO objective function makes use of multiple epochs
+of minibatch updates. For the lunar lander test case this means a favorable balance between sample
+’wall-time, simplicity and complexity’ (Schulman et al., 2017).
+
 \section{Results}
 A presentation of your results, showing how quickly and how well your agent(s)
 learn (i.e. improve their policies). Include informative baselines for comparison (e.g. the best
