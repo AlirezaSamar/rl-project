@@ -19,7 +19,7 @@
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
 \usepackage{graphicx}
-
+\bibliographystyle{bathx}  
 
 % Give your project report an appropriate title!
 
@@ -112,23 +112,24 @@ With these particulars in mind we can see that our agent is incentivised to dire
 
 
 \section{Background}
-A discussion of reinforcement learning methods that may be effective at solving
-your chosen problem, their strengths and weaknesses for your chosen problem, and any existing
-results in the scientific literature (or publicly available online) on your chosen problem or
-similar problems.
+\textbf{TODO: Explain MDPs}
+\textbf{TODO: Explain basic RL ; Bellman Equation and Dynamic Programming/Optimization problems, Value Iteration Methods, Policy Gradient Methods}
 
 \section{Method}
 A description of the method(s) used to solve your chosen problem, an explanation
 of how these methods work (in your own words), and an explanation of why you chose these
-specific methods.
+specific methods.\\\newline
 
+To understand our chosen method PPO, we must first introduce TRPO. 
+\subsection{TRPO}
+Trust Region Policy Optimization (TRPO)
 \subsection{PPO}
 
 Proximal Policy Optimization is a policy gradient method that alternates between sampling data
 through environment interactions and optimizing a ’surrogate’ objective function using ’stochastic
 gradient ascent’ (Schulman et al., 2017). The PPO objective function makes use of multiple epochs
 of minibatch updates. For the lunar lander test case this means a favorable balance between sample
-’wall-time, simplicity and complexity’ (Schulman et al., 2017).
+’wall-time, simplicity and complexity’ \citep{schulman2017proximal}.
 
 \section{Results}
 A presentation of your results, showing how quickly and how well your agent(s)
@@ -148,11 +149,8 @@ A discussion of your personal experience with the project, such as
 difficulties or pleasant surprises you encountered while completing it.
 
 
-\section*{References}
-\small
-Schulman, J., Wolski, F., Dhariwal, P., Radford, A., and Klimov, O. (2017). Proximal policy optimization
-algorithms. arXiv preprint arXiv:1707.06347.
-\normalsize
+\bibliography{references}
+
 \newpage
 \section*{Appendices}
 If you have additional content that you would like to include in the appendices, please do so here.
