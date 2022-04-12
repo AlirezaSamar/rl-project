@@ -19,6 +19,7 @@
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
 \usepackage{graphicx}
+\usepackage{amsmath}
 \bibliographystyle{bathx}  
 
 % Give your project report an appropriate title!
@@ -113,7 +114,7 @@ With these particulars in mind we can see that our agent is incentivised to dire
 
 \section{Background}
 \textbf{TODO: Explain MDPs}
-\textbf{TODO: Explain basic RL ; Bellman Equation and Dynamic Programming/Optimization problems, Value Iteration Methods, Policy Gradient Methods}
+\textbf{TODO: Explain basic RL ; Bellman Equation and Dynamic Programming/Optimization problems, Value Iteration Methods, Policy Gradient Methods, online vs offline, off-policy vs on-policy, q value, state value, advantage function}
 
 \section{Method}
 A description of the method(s) used to solve your chosen problem, an explanation
@@ -122,7 +123,13 @@ specific methods.\\\newline
 
 To understand our chosen method PPO, we must first introduce TRPO. 
 \subsection{TRPO}
-Trust Region Policy Optimization (TRPO) \citep{pmlr-v37-schulman15} yeet 
+Trust Region Policy Optimization (TRPO) \citep{pmlr-v37-schulman15} is a policy-gradient method for on-policy, online learning. It uses the concept of a 'Trust Region' in policy space, which permits the policy to move only within a specific 'trusted' bound per gradient ascent step. This mitigates the risk of an agent moving into a region of policy space from which it cannot recover from a sample collected under a poor policy. \\\newline
+An advantage estimate is calculated using a sampled discounted return under a policy $\pi$ from an episode rollout, and a noisy value function estimate from a function approximator. Importance sampling is used to calculate the policy gradient from the old policy with a different sample distribution, and as such achieves greater sample efficiency than vanilla policy gradient methods (which use current policy to compute gradient). The objective function and target for optimisation is:
+\begin{gather}
+    \max_\theta\; \hat{\mathbb{E}_t}\left[\frac{\pi_\theta(a_t | s_t)}{\pi_{\theta_{old}}(a_t | s_t)}\hat{A_t}\right]\\
+\text{subject to } \hat{\mathbb{E}_t}\left[KL\left[\pi_{\theta_{old}}(\cdot | s_t),\pi_\theta(\cdot|s_t)\right]\right] \leq \delta
+\end{gather}
+Where $KL$ is Kullback-Leibler Divergence \citep{Joyce2011}, and $\delta$ our trust region bound. Whilst the specifics of KL-Divergence are outside the scope of this project, it is essentially a statistical measure of the distance between two probability distributions; the policy update is subject to the constraint that KL-Divergence between the new and old policy must not exceed some hyperparameter $\delta$ for a gradient step. 
 \subsection{PPO}
 
 Proximal Policy Optimization is a policy gradient method that alternates between sampling data
@@ -130,6 +137,11 @@ through environment interactions and optimizing a ’surrogate’ objective func
 gradient ascent’ \citep{schulman2017proximal}. The PPO objective function makes use of multiple epochs
 of minibatch updates. For the lunar lander test case this means a favorable balance between sample
 ’wall-time, simplicity and complexity’ \citep{schulman2017proximal}.
+\begin{itemize}
+  \item simple code
+  \item less sensitive to hyperparameters
+  \item sample efficiency
+\end{itemize}
 
 \section{Results}
 A presentation of your results, showing how quickly and how well your agent(s)
