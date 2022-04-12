@@ -20,6 +20,7 @@
 \usepackage{microtype}      % microtypography
 \usepackage{graphicx}
 \usepackage{amsmath}
+\usepackage{float}
 \bibliographystyle{bathx}  
 
 % Give your project report an appropriate title!
@@ -38,12 +39,12 @@
 % author name.
 
 \author{
-  Alireza Samar, Arnold Gomes, Danny Demarco, 
+  Alireza Samar, Arnold Gomes, Danny Demarco, Tyler Christie
   \\
   Department of Computer Science\\
   University of Bath\\
   Bath, BA2 7AY \\
-  \texttt{\{as4731, ag2342, dd480, rdw41\}@bath.ac.uk} \\
+  \texttt{\{as4731, ag2342, dd480, rdw41, tc905\}@bath.ac.uk} \\
   %% examples of more authors
   %% \And
   %% Coauthor \\
@@ -124,24 +125,24 @@ specific methods.\\\newline
 To understand our chosen method PPO, we must first introduce TRPO. 
 \subsection{TRPO}
 Trust Region Policy Optimization (TRPO) \citep{pmlr-v37-schulman15} is a policy-gradient method for on-policy, online learning. It uses the concept of a 'Trust Region' in policy space, which permits the policy to move only within a specific 'trusted' bound per gradient ascent step. This mitigates the risk of an agent moving into a region of policy space from which it cannot recover from a sample collected under a poor policy. \\\newline
-An advantage estimate is calculated using a sampled discounted return under a policy $\pi$ from an episode rollout, and a noisy value function estimate from a function approximator. Importance sampling is used to calculate the policy gradient from the old policy with a different sample distribution, and as such achieves greater sample efficiency than vanilla policy gradient methods (which use current policy to compute gradient). The objective function and target for optimisation is:
+An advantage estimate is calculated using a sampled discounted return under a policy $\pi$, parameterised by $\theta$, from an episode rollout, and a noisy value function estimate from a function approximator. Importance sampling is used to calculate the policy gradient from the old policy with a different sample distribution, and as such achieves greater sample efficiency than vanilla policy gradient methods (which use current policy to compute gradient). The objective function and target for optimisation is:
 \begin{gather}
     \max_\theta\; \hat{\mathbb{E}_t}\left[\frac{\pi_\theta(a_t | s_t)}{\pi_{\theta_{old}}(a_t | s_t)}\hat{A_t}\right]\\
 \text{subject to } \hat{\mathbb{E}_t}\left[KL\left[\pi_{\theta_{old}}(\cdot | s_t),\pi_\theta(\cdot|s_t)\right]\right] \leq \delta
 \end{gather}
-Where $KL$ is Kullback-Leibler Divergence \citep{Joyce2011}, and $\delta$ our trust region bound. Whilst the specifics of KL-Divergence are outside the scope of this project, it is essentially a statistical measure of the distance between two probability distributions; the policy update is subject to the constraint that KL-Divergence between the new and old policy must not exceed some hyperparameter $\delta$ for a gradient step. 
+Where $KL$ is Kullback-Leibler Divergence \citep{Joyce2011}, and $\delta$ our trust region bound. Whilst the specifics of KL-Divergence are outside the scope of this project, it is essentially a statistical measure of the distance between two probability distributions; the policy update is subject to the constraint that KL-Divergence between the new and old policy must not exceed some hyperparameter $\delta$ for a gradient step. TRPO naturally falls into an Actor-Critic type model, where the value estimation is performed by the critic and the actor encodes the policy distribution. 
 \subsection{PPO}
-
-Proximal Policy Optimization is a policy gradient method that alternates between sampling data
-through environment interactions and optimizing a ’surrogate’ objective function using ’stochastic
-gradient ascent’ \citep{schulman2017proximal}. The PPO objective function makes use of multiple epochs
-of minibatch updates. For the lunar lander test case this means a favorable balance between sample
-’wall-time, simplicity and complexity’ \citep{schulman2017proximal}.
-\begin{itemize}
-  \item simple code
-  \item less sensitive to hyperparameters
-  \item sample efficiency
-\end{itemize}
+Proximal Policy Optimization \citep{schulman2017proximal} is a simplification and improvement over TRPO. Problems with TRPO were perceived to be complexity of implementation, and tractability of computation with regards to the KL-Divergence bound, which is an expensive operation with second-order optimisation required. A simpler bound was found to be more effective:
+\begin{figure}[H]
+  \centering
+  $
+      L^{CLIP}(\theta) = \hat{\mathbb{E}_t}\left[min(r_t(\theta)\hat{A^t},clip(r_t(\theta),1-\epsilon,1+\epsilon)\hat{A^t})\right]
+  $ 
+  \caption{PPO network parameter update function}
+  \label{ppoupdate}
+\end{figure}
+Where $r_t(\theta)$ is identical to the probability ratio from TRPO ($\frac{\pi_\theta(a_t | s_t)}{\pi_{\theta_{old}}(a_t | s_t)}$). The clip function replaces the KL-Divergence constraint, which clips the policy probability ratio such that the change does not exceed some hyperparameter $\epsilon$, typically 0.2 \citep{schulman2017proximal}. In addition to this, PPO provides some non-trivial code-level optimisations which significantly improve performance over TRPO \citep{Engstrom2020Implementation}. \\\newline
+PPO was chosen for the proposed domain as it is relatively simple to implement, provides relatively good sample efficiency over other policy gradient methods, and is not particularly sensitive to hyperparameters \citep{schulman2017proximal}.
 
 \section{Results}
 A presentation of your results, showing how quickly and how well your agent(s)
