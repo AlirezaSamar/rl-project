@@ -7,7 +7,7 @@ from torch.utils.tensorboard import SummaryWriter
 writer = SummaryWriter()
 import numpy
 
-NO_EPOCHS = 1000
+NO_EPOCHS = 10000
 NO_STEPS = 2048
 GAMMA = 0.99
 LAMB = 0.95
@@ -126,7 +126,7 @@ def update(states,actions,prob_old,vals,advs):
 
 
 
-
+r_avg = deque(maxlen=100)
 for e in range(NO_EPOCHS):
     states = []
     actions = []
@@ -159,6 +159,9 @@ for e in range(NO_EPOCHS):
                     new_val = val.item()
             else:
                 new_val = 0
+                
+            if done: 
+                r_avg.append(sum(ep_rewards))
 
             #reward is approximated by value function if bootstrap, otherwise no reward for end of episode
             ep_rewards.append(new_val)
@@ -191,6 +194,10 @@ for e in range(NO_EPOCHS):
     writer.add_scalar("critic_loss",critic_loss,e)
     writer.add_scalar("avg_reward",sum(epoch_rewards)/len(epoch_rewards),e)
     writer.flush()
+    
+    if numpy.average(r_avg) >=200:
+        print("100 episode rolling average > 200, stopping...")
+        exit()
 
 writer.close()
 
