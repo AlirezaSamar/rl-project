@@ -4,6 +4,7 @@ import gym
 from torch.distributions import Categorical
 import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
+from collections import deque
 writer = SummaryWriter()
 import numpy
 
