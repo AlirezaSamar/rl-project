@@ -1,0 +1,9 @@
+alr: 0.000699
+batch_size: 80
+clip_eps: 0.208
+clr: 0.000707
+depth: 2
+epoch_steps: 2048
+gamma: 0.99
+lamb: 0.953
+writer: -1
