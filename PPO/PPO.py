@@ -195,7 +195,7 @@ for e in range(NO_EPOCHS):
     writer.add_scalar("avg_reward",sum(epoch_rewards)/len(epoch_rewards),e)
     writer.flush()
     
-    if numpy.average(r_avg) >=200:
+    if numpy.average(r_avg) >=200 && len(r_avg) == 100:
         print("100 episode rolling average > 200, stopping...")
         exit()
 
