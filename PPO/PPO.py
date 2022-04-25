@@ -163,7 +163,7 @@ for e in range(NO_EPOCHS):
     epoch_rewards = []
     avg_reward = 0
     done = False
-    state = torch.Tensor(env.reset())
+    state = torch.Tensor(env.reset()).unsqueeze(0)
     for i in range(EPOCH_STEPS):
         _, action, ps, val = agent(state)
         next_state, reward, done, _ = env.step(action.item())
@@ -174,7 +174,7 @@ for e in range(NO_EPOCHS):
         ep_rewards.append(reward)
         ep_vals.append(val.item())
 
-        state = torch.Tensor(next_state)
+        state = torch.Tensor(next_state).unsqueeze(0)
 
         if (i == EPOCH_STEPS-1) or done:
 
@@ -198,7 +198,7 @@ for e in range(NO_EPOCHS):
             ep_rewards.clear()
             ep_vals.clear()
 
-            state = torch.Tensor(env.reset())
+            state = torch.Tensor(env.reset()).unsqueeze(0)
 
     states = torch.stack((states)).detach()
     actions = torch.stack((actions)).detach()
