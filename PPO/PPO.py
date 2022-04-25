@@ -19,6 +19,10 @@ CLIP = 0.2
 lr = 3e-4
 batch_size = 32
 
+def init_weights(m):
+    if type(m) == nn.Linear:
+        torch.nn.init.orthogonal_(m.weight)
+
 class Critic(nn.Module):
     def __init__(self,obs, hidden_size = 256):
         super().__init__()
@@ -30,6 +34,8 @@ class Critic(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_size, 1)
             )
+        
+        self.net.apply(init_weights)
 
     def forward(self,x):
         return self.net(x)
@@ -45,6 +51,9 @@ class Actor(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_size, n_actions)
             )
+        
+        self.net.apply(init_weights)
+
     def forward(self,x):
         logits = self.net(x)
         dist = Categorical(logits=logits)
@@ -73,13 +82,13 @@ env = gym.make("LunarLander-v2")
 state = torch.Tensor(env.reset())
 obs = env.observation_space.shape[0]
 actions = env.action_space.n
-
 actor = Actor(obs,actions)
 critic = Critic(obs)
 
 
 
 agent = ActorCritic(critic,actor)
+
 
 a_opt = optim.Adam(actor.parameters(), lr=lr)
 c_opt = optim.Adam(critic.parameters(), lr=lr)
@@ -113,7 +122,6 @@ def update(states,actions,prob_old,vals,advs):
     tot_act_loss = 0
     tot_crit_loss = 0
     for _ in range(PPO_STEPS):
-        advs = (advs - advs.mean())/(advs.std()+1e-8)
         dist, _, = actor(states)
         vals_new = critic(states)
 
@@ -157,7 +165,6 @@ for e in range(NO_EPOCHS):
     done = False
     state = torch.Tensor(env.reset())
     for i in range(EPOCH_STEPS):
-
         _, action, ps, val = agent(state)
         next_state, reward, done, _ = env.step(action.item())
 
