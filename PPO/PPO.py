@@ -20,7 +20,7 @@ lr = 3e-4
 batch_size = 32
 
 class Critic(nn.Module):
-    def __init__(self,obs, hidden_size = 128):
+    def __init__(self,obs, hidden_size = 256):
         super().__init__()
 
         self.net = nn.Sequential(
@@ -35,7 +35,7 @@ class Critic(nn.Module):
         return self.net(x)
 
 class Actor(nn.Module):
-    def __init__(self,obs, n_actions, hidden_size = 128):
+    def __init__(self,obs, n_actions, hidden_size = 256):
         super().__init__()
 
         self.net = nn.Sequential(
