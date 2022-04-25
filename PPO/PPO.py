@@ -8,7 +8,10 @@ from collections import deque
 writer = SummaryWriter()
 import numpy
 
+from gym_simplifiedtetris.envs import SimplifiedTetrisBinaryEnv as Tetris
+
 NO_EPOCHS = 10000
+EPOCH_STEPS = 2048
 PPO_STEPS = 5
 GAMMA = 0.99
 LAMB = 0.95
@@ -56,6 +59,7 @@ class ActorCritic(nn.Module):
         self.critic = critic
         self.actor = actor
 
+    @torch.no_grad()
     def forward(self, state):
         dist, action = self.actor(state)
         probs = dist.log_prob(action)
@@ -77,7 +81,8 @@ critic = Critic(obs)
 
 agent = ActorCritic(critic,actor)
 
-optimizer = optim.Adam(agent.parameters(), lr=lr)
+a_opt = optim.Adam(actor.parameters(), lr=lr)
+c_opt = optim.Adam(critic.parameters(), lr=lr)
 
 def gae(rewards, values):
 
@@ -108,8 +113,10 @@ def update(states,actions,prob_old,vals,advs):
     tot_act_loss = 0
     tot_crit_loss = 0
     for _ in range(PPO_STEPS):
-        advs = (advs - advs.mean())/advs.std()
-        dist, _, _, vals_new = agent(states)
+        advs = (advs - advs.mean())/(advs.std()+1e-8)
+        dist, _, = actor(states)
+        vals_new = critic(states)
+
         prob = dist.log_prob(actions)
         ratio = torch.exp(prob - prob_old)
         #PPO update
@@ -118,14 +125,19 @@ def update(states,actions,prob_old,vals,advs):
         actor_loss = -(torch.min(ratio * advs, clip)).mean()
         tot_act_loss += actor_loss
         #MSE
-        critic_loss = (vals - vals_new).pow(2).mean()
+        clip2 = (torch.clamp(vals-vals_new,1 - CLIP, 1 + CLIP) - vals_new).pow(2)
+
+        critic_loss = 0.5*torch.max(clip2, vals-vals_new).mean()
         tot_crit_loss += critic_loss
-        optimizer.zero_grad()
+
+        a_opt.zero_grad()
+        c_opt.zero_grad()
 
         actor_loss.backward()
         critic_loss.backward()
 
-        optimizer.step()
+        a_opt.step()
+        c_opt.step()
 
     return tot_act_loss/PPO_STEPS, tot_crit_loss/PPO_STEPS
 
@@ -144,8 +156,8 @@ for e in range(NO_EPOCHS):
     avg_reward = 0
     done = False
     state = torch.Tensor(env.reset())
+    for i in range(EPOCH_STEPS):
 
-    while not done:
         _, action, ps, val = agent(state)
         next_state, reward, done, _ = env.step(action.item())
 
@@ -157,16 +169,29 @@ for e in range(NO_EPOCHS):
 
         state = torch.Tensor(next_state)
 
-    ep_rewards.append(0)
-    ep_vals.append(0)
-    r_avg.append(sum(ep_rewards))
-    vals += discount(ep_rewards,GAMMA)[:-1]
-    advs += gae(ep_rewards,ep_vals)
+        if (i == EPOCH_STEPS-1) or done:
 
-    epoch_rewards.append(sum(ep_rewards))
+            if (i == EPOCH_STEPS-1) and not done:
+                with torch.no_grad():
+                    _, _, _, val = agent(state)
+                    nxt = val.item()
+            else:
+                nxt = 0
 
-    ep_rewards.clear()
-    ep_vals.clear()
+            ep_rewards.append(nxt)
+            ep_vals.append(nxt)
+
+            r_avg.append(sum(ep_rewards))
+
+            vals += discount(ep_rewards,GAMMA)[:-1]
+            advs += gae(ep_rewards,ep_vals)
+
+            epoch_rewards.append(sum(ep_rewards))
+
+            ep_rewards.clear()
+            ep_vals.clear()
+
+            state = torch.Tensor(env.reset())
 
     states = torch.stack((states)).detach()
     actions = torch.stack((actions)).detach()
@@ -176,7 +201,7 @@ for e in range(NO_EPOCHS):
 
     actor_loss, critic_loss = update(states,actions,probs,vals,advs)
 
-    print("[ Epoch :",e,"- actor_loss: {:.2e}".format(actor_loss.item()),", critic_loss: {:.2e}".format(critic_loss.item()),", avg_reward: {:.2f} ]".format(sum(epoch_rewards)/len(epoch_rewards)), end='\r')
+    print("[ Epoch :",e,"- actor_loss: {:.2e}".format(actor_loss.item()),", critic_loss: {:.2e}".format(critic_loss.item()),", avg_reward: {:.2f} ".format(sum(epoch_rewards)/len(epoch_rewards)), "running average: {:.2f}]    ".format(numpy.average(r_avg)), end='\r')
 
     writer.add_scalar("actor_loss",actor_loss,e)
     writer.add_scalar("critic_loss",critic_loss,e)
