@@ -56,10 +56,8 @@ class Actor(nn.Module):
 
     def forward(self,x):
         logits = self.net(x)
-        dist = Categorical(logits=logits)
-        action = dist.sample()
 
-        return dist,action
+        return logits
 
 class ActorCritic(nn.Module):
     def __init__(self, critic, actor):
@@ -68,13 +66,13 @@ class ActorCritic(nn.Module):
         self.critic = critic
         self.actor = actor
 
-    @torch.no_grad()
     def forward(self, state):
-        dist, action = self.actor(state)
-        probs = dist.log_prob(action)
+        logits = self.actor(state)
         val = self.critic(state)
-
-        return dist, action, probs, val
+        dist = Categorical(logits=logits)
+        action = dist.sample()
+        probs = dist.log_prob(action)
+        return action, probs, val
 
 
 
@@ -89,9 +87,7 @@ critic = Critic(obs)
 
 agent = ActorCritic(critic,actor)
 
-
-a_opt = optim.Adam(actor.parameters(), lr=lr)
-c_opt = optim.Adam(critic.parameters(), lr=lr)
+opt = optim.Adam(agent.parameters(), lr=lr)
 
 def gae(rewards, values):
 
@@ -119,35 +115,25 @@ def discount(rewards, gamma):
 
 def update(states,actions,prob_old,vals,advs):
 
-    tot_act_loss = 0
-    tot_crit_loss = 0
-    for _ in range(PPO_STEPS):
-        dist, _, = actor(states)
-        vals_new = critic(states)
+    _, prob, vals_new = agent(states)
 
-        prob = dist.log_prob(actions)
-        ratio = torch.exp(prob - prob_old)
-        #PPO update
-        clip = torch.clamp(ratio, 1 - CLIP, 1 + CLIP) * advs
-        #negative gradient descent - gradient ascent
-        actor_loss = -(torch.min(ratio * advs, clip)).mean()
-        tot_act_loss += actor_loss
-        #MSE
-        clip2 = (torch.clamp(vals-vals_new,1 - CLIP, 1 + CLIP) - vals_new).pow(2)
+    ratio = torch.exp(prob - prob_old)
+    #PPO update
+    clip = torch.clamp(ratio, 1 - CLIP, 1 + CLIP) * advs
+    #negative gradient descent - gradient ascent
+    actor_loss = -(torch.min(ratio * advs, clip)).mean()
+    #MSE
+    clip2 = (torch.clamp(vals-vals_new,1 - CLIP, 1 + CLIP) - vals_new).pow(2)
 
-        critic_loss = 0.5*torch.max(clip2, vals-vals_new).mean()
-        tot_crit_loss += critic_loss
+    critic_loss = 0.5*torch.max(clip2, vals-vals_new).mean()
 
-        a_opt.zero_grad()
-        c_opt.zero_grad()
+    opt.zero_grad()
 
-        actor_loss.backward()
-        critic_loss.backward()
+    (critic_loss + actor_loss).backward()
 
-        a_opt.step()
-        c_opt.step()
+    opt.step()
 
-    return tot_act_loss/PPO_STEPS, tot_crit_loss/PPO_STEPS
+    return actor_loss, critic_loss
 
 
 
@@ -163,27 +149,27 @@ for e in range(NO_EPOCHS):
     epoch_rewards = []
     avg_reward = 0
     done = False
-    state = torch.Tensor(env.reset()).unsqueeze(0)
+    state = torch.Tensor(env.reset())
     for i in range(EPOCH_STEPS):
-        _, action, ps, val = agent(state)
+
+        with torch.no_grad():
+            action, ps, val = agent(state)
+
         next_state, reward, done, _ = env.step(action.item())
 
         states.append(state)
         actions.append(action)
         probs.append(ps)
         ep_rewards.append(reward)
-        ep_vals.append(val.item())
+        ep_vals.append(val)
 
-        state = torch.Tensor(next_state).unsqueeze(0)
+        state = torch.Tensor(next_state)
 
         if (i == EPOCH_STEPS-1) or done:
 
-            if (i == EPOCH_STEPS-1) and not done:
-                with torch.no_grad():
-                    _, _, _, val = agent(state)
-                    nxt = val.item()
-            else:
-                nxt = 0
+            with torch.no_grad():
+                _, _, val = agent(state)
+                nxt = val
 
             ep_rewards.append(nxt)
             ep_vals.append(nxt)
@@ -198,17 +184,17 @@ for e in range(NO_EPOCHS):
             ep_rewards.clear()
             ep_vals.clear()
 
-            state = torch.Tensor(env.reset()).unsqueeze(0)
+            state = torch.Tensor(env.reset())
 
-    states = torch.stack((states)).detach()
-    actions = torch.stack((actions)).detach()
-    probs = torch.stack((probs)).detach()
-    vals = torch.Tensor(vals).detach()
-    advs = torch.Tensor(advs).detach()
-
+    states = torch.stack((states))
+    actions = torch.stack((actions))
+    probs = torch.stack((probs))
+    vals = torch.stack((vals))
+    advs = torch.stack((advs))
+    
     actor_loss, critic_loss = update(states,actions,probs,vals,advs)
 
-    print("[ Epoch :",e,"- actor_loss: {:.2e}".format(actor_loss.item()),", critic_loss: {:.2e}".format(critic_loss.item()),", avg_reward: {:.2f} ".format(sum(epoch_rewards)/len(epoch_rewards)), "running average: {:.2f}]    ".format(numpy.average(r_avg)), end='\r')
+    print("[ Epoch :",e,"- actor_loss: {:.2e}".format(actor_loss.item()),", critic_loss: {:.2e}".format(critic_loss.item()),", avg_reward: {:.2f} ".format((sum(epoch_rewards)/len(epoch_rewards)).item()), "running average: {:.2f}]    ".format(numpy.average(r_avg)), end='\r')
 
     writer.add_scalar("actor_loss",actor_loss,e)
     writer.add_scalar("critic_loss",critic_loss,e)
