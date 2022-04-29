@@ -12,213 +12,163 @@ from gym_simplifiedtetris.envs import SimplifiedTetrisBinaryEnv as Tetris
 
 NO_EPOCHS = 10000
 EPOCH_STEPS = 2048
-PPO_STEPS = 5
+PPO_STEPS = 10
 GAMMA = 0.99
 LAMB = 0.95
 CLIP = 0.2
-lr = 3e-4
-batch_size = 32
+lr_a = 3e-4
+lr_c = 1e-3
 
-def init_weights(m):
-    if type(m) == nn.Linear:
-        torch.nn.init.orthogonal_(m.weight)
+class Policy(nn.Module):
 
-class Critic(nn.Module):
-    def __init__(self,obs, hidden_size = 256):
-        super().__init__()
+    def __init__(self, obs, n_actions, hidden_size = 128):
 
-        self.net = nn.Sequential(
+        super(Policy, self).__init__()
+
+        self.actor = nn.Sequential(
             nn.Linear(obs,hidden_size),
             nn.ReLU(),
-            nn.Linear(hidden_size,hidden_size),
+            nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
-            nn.Linear(hidden_size, 1)
-            )
-        
-        #self.net.apply(init_weights)
+            nn.Linear(hidden_size, n_actions),
+            nn.Softmax(dim=-1),
+        )
 
-    def forward(self,x):
-        return self.net(x)
 
-class Actor(nn.Module):
-    def __init__(self,obs, n_actions, hidden_size = 256):
-        super().__init__()
-
-        self.net = nn.Sequential(
+        self.critic = nn.Sequential(
             nn.Linear(obs,hidden_size),
             nn.ReLU(),
-            nn.Linear(hidden_size,hidden_size),
+            nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
-            nn.Linear(hidden_size, n_actions)
-            )
-        
-        #self.net.apply(init_weights)
+            nn.Linear(hidden_size, 1),
+        )
 
-    def forward(self,x):
-        logits = self.net(x)
+    def forward(self):
+        pass
 
-        return logits
+    def act(self,x):
 
-class ActorCritic(nn.Module):
-    def __init__(self, critic, actor):
-        super().__init__()
+        probs = self.actor(x)
+        dist = Categorical(probs)
 
-        self.critic = critic
-        self.actor = actor
-
-    def forward(self, state):
-        logits = self.actor(state)
-        val = self.critic(state)
-        dist = Categorical(logits=logits)
         action = dist.sample()
-        probs = dist.log_prob(action)
-        return action, probs, val
+        log_prob = dist.log_prob(action)
+
+        return action.detach(), log_prob.detach()
+
+    def eval(self,states,actions):
+
+        probs = self.actor(states)
+        dist = Categorical(probs)
+        log_probs = dist.log_prob(actions)
+        entropy = dist.entropy()
+        vals = self.critic(states)
+
+        return log_probs, vals, entropy
 
 
-
-env = gym.make("LunarLander-v2")#Tetris(grid_dims=(10,10), piece_size=2)#
-state = torch.Tensor(env.reset())
+env = gym.make("LunarLander-v2")##Tetris(grid_dims=(10,10), piece_size=2)#
 obs = env.observation_space.shape[0]
 actions = env.action_space.n
-actor = Actor(obs,actions)
-critic = Critic(obs)
 
+agent = Policy(obs,actions)
 
-
-agent = ActorCritic(critic,actor)
-
-opt = optim.Adam(agent.parameters(), lr=lr)
-
-def gae(rewards, values):
-
-    rs = rewards
-    vals = values
-
-    x = []
-    for i in range(len(rs)-1):
-        x.append(rs[i]+GAMMA*vals[i+1] - vals[i])
-
-    a = discount(x, GAMMA * LAMB)
-    return a
-
-def discount(rewards, gamma):
-
-    rs = []
-    sum_rs = 0
-
-    for r in reversed(rewards):
-        sum_rs = (sum_rs * gamma) + r
-        rs.append(sum_rs)
-
-
-    return list(reversed(rs))
-
-def _iter(s,a,p,v,ad):
-    for i in range(0,EPOCH_STEPS-batch_size,batch_size):
-        yield s[i:i+batch_size],a[i:i+batch_size],p[i:i+batch_size],v[i:i+batch_size],ad[i:i+batch_size]
-
-def update(s,a,p,v,ad):
-
-    for states,actions,prob_old,vals,advs in _iter(s,a,p,v,ad):
-        print("___________________________________________________")
-        print(states)
-        print(states.shape)
-        exit()
-        _, prob, vals_new = agent(states)
-
-        ratio = torch.exp(prob - prob_old)
-        #PPO update
-        clip = torch.clamp(ratio, 1 - CLIP, 1 + CLIP) * advs
-        #negative gradient descent - gradient ascent
-        actor_loss = -(torch.min(ratio * advs, clip)).mean()
-        #MSE
-        #clip2 = (torch.clamp(vals-vals_new,1 - CLIP, 1 + CLIP) - vals_new).pow(2)
-
-       # critic_loss = 0.5*torch.max(clip2, vals-vals_new).mean()
-
-        critic_loss = 0.5*(vals-vals_new).mean()
-
-        opt.zero_grad()
-
-        actor_loss.backward()
-        critic_loss.backward()
-
-        opt.step()
-
-    return actor_loss, critic_loss
-
-
+opt = optim.Adam([{'params': agent.actor.parameters(), 'lr': lr_a},
+                {'params': agent.critic.parameters(), 'lr': lr_c}
+                    ])
 
 r_avg = deque(maxlen=100)
+r_avg_len = deque(maxlen=100)
+
+def update(states,actions,probs,rewards,dones):
+
+    discount_r = []
+    r = 0
+
+    for rew, done in zip(reversed(rewards),reversed(dones)):
+        if done:
+            r = 0
+        else:
+            r = rew + (GAMMA*r)
+        discount_r.insert(0,r)
+    
+    discount_r = torch.tensor(discount_r, dtype=torch.float32)
+    #discount_r = (discount_r - discount_r.mean()) / (discount_r.std() + 1e-7)
+
+    o_states = torch.squeeze(torch.stack(states,dim=0)).detach()
+    o_actions = torch.squeeze(torch.stack(actions,dim=0)).detach()
+    o_probs = torch.squeeze(torch.stack(probs,dim=0)).detach()
+
+    losses = []
+
+    for _ in range(PPO_STEPS):
+
+        n_probs, vals, entropy = agent.eval(o_states,o_actions)
+
+        vals = torch.squeeze(vals)
+
+        ratio = torch.exp(n_probs - o_probs.detach())
+
+        adv = discount_r - vals.detach()
+
+        clip = torch.clamp(ratio, 1-CLIP, 1+CLIP) * adv
+
+        loss = -torch.min(ratio*adv, clip) + 0.5*nn.MSELoss()(vals,discount_r) - 0.01*entropy
+
+        opt.zero_grad()
+        loss.mean().backward()
+        opt.step()
+
+        losses.append(loss.mean())
+    
+    return sum(losses)/len(losses)
+
+    
+
 for e in range(NO_EPOCHS):
+
     states = []
     actions = []
     probs = []
-    advs = []
-    vals = []
-    ep_rewards = []
-    ep_vals = []
-    epoch_rewards = []
-    avg_reward = 0
-    done = False
+    rewards = []
+    dones = []
+    ep_reward = 0
+    ep_len = 0
     state = torch.Tensor(env.reset())
+
     for i in range(EPOCH_STEPS):
 
         with torch.no_grad():
-            action, ps, val = agent(state)
+            action, log_prob = agent.act(state)
 
         next_state, reward, done, _ = env.step(action.item())
 
+        ep_reward += reward
+        ep_len += 1
+
         states.append(state)
         actions.append(action)
-        probs.append(ps)
-        ep_rewards.append(reward)
-        ep_vals.append(val.item())
+        probs.append(log_prob)
+        rewards.append(reward)
+        dones.append(done)
 
         state = torch.Tensor(next_state)
 
-        if (i == EPOCH_STEPS-1) or done:
-
-            with torch.no_grad():
-                _, _, val = agent(state)
-                nxt = val.item()
-
-            r_avg.append(sum(ep_rewards))
-            epoch_rewards.append(sum(ep_rewards))
-
-            ep_rewards.append(nxt)
-            ep_vals.append(nxt)
-
-            vals += discount(ep_rewards,GAMMA)[:-1]
-            advs += gae(ep_rewards,ep_vals)
-
-            ep_rewards.clear()
-            ep_vals.clear()
-
+        if done:
             state = torch.Tensor(env.reset())
+            r_avg.append(ep_reward)
+            r_avg_len.append(ep_len)
+            ep_len = 0
+            ep_reward = 0
 
-    states = torch.stack((states)).detach()
-    actions = torch.stack((actions)).detach()
-    probs = torch.stack((probs)).detach()
-    vals = torch.tensor(vals).detach()
-    advs = torch.tensor(advs).detach()
-    
-    print(states)
-    print(states.shape)
-    actor_loss, critic_loss = update(states,actions,probs,vals,advs)
+    loss = update(states,actions,probs,rewards,dones)  
 
-    print("[ Epoch :",e,"- actor_loss: {:.2e}".format(actor_loss.item()),", critic_loss: {:.2e}".format(critic_loss.item()),", avg_reward: {:.2f} ".format((sum(epoch_rewards)/len(epoch_rewards))), "running average: {:.2f}]    ".format((sum(r_avg)/len(r_avg))), end='\r')
+    print("[ Epoch :",e,"- loss: {:.2e}".format(loss.item()),", running average: {:.2f}]    ".format((sum(r_avg)/len(r_avg))),", running average len: {:.2f}]    ".format((sum(r_avg_len)/len(r_avg))), end='\r')
 
-    writer.add_scalar("actor_loss",actor_loss,e)
-    writer.add_scalar("critic_loss",critic_loss,e)
-    writer.add_scalar("avg_reward",sum(epoch_rewards)/len(epoch_rewards),e)
-    writer.flush()
-    
-    if (sum(r_avg)/len(r_avg))>=200 and len(r_avg) == 100:
-        print("100 episode rolling average > 200, stopping...")
-        exit()
 
-writer.close()
+
+
+
 
 
 
