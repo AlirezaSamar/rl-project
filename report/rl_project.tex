@@ -150,15 +150,15 @@ Where $\alpha$ is a hyperparameter controlling learning rate and $G_t$ is our Mo
 Notice that unlike PPO, this update method only takes into account current policy, and as such results in much lower sample efficiency. In many instances, due to the high variance of Monte-Carlo sampling methods, an arbitrary baseline $b(s)$ is subtracted from $G_t$ in the update. $b(s)$ does not vary with $a$ and as such reduces per-update variance. \\\newline
 The conflict surrounding implementation details for REINFORCE is with regard to the frequency of updates. Some accounts \citep{10.5555/3312046} suggest updates to the network should be done at every timestep, Others \citep{silver2015} suggest updates on some time horizon $T$, and \citet{williams1992simple} suggests a number of update points, including per-episode (i.e. traditional Monte-Carlo) updates. We chose to implement REINFORCE with per-episode updates, and no baseline. \\\newline
 We choose to include REINFORCE as a baseline policy gradient method, to compare results of our more modern PPO and DQN algorithms.
-\section{Results}
-A presentation of your results, showing how quickly and how well your agent(s)
-learn (i.e. improve their policies). Include informative baselines for comparison (e.g. the best
-possible performance, the performance of an average human, or the performance of an agent
-that selects actions randomly).
-
-\section{Discussion}
-An evaluation of how well you solved your chosen problem.
-
+\section{Results and Discussion}
+Algorithms were coded in base PyTorch \citep{NEURIPS2019_9015}. Due to time constraints, Bayesian Optimization was not carried out to discover optimal hyperparameters. As a result, hyperparameters were sourced from the original papers, or by consulting other online implementations and heuristic search. We make no claim that the hyperparameters used in the below experiments are optimal. Algorithms were run 10 times, and the graphs below are the average of these runs. Linear interpolation was used to fit data points per run to the average run length. Full graphs for every run can be found in Appendix X. 
+\subsection{PPO}
+PPO solved the Lunar Lander environment in an average of 608 episodes with a standard deviation of 102.6:
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.35]{1.png}
+  \caption{(left-to-right) Average reward, episode length and loss for PPO.}
+\end{figure}
 \section{Future Work}
 A discussion of potential future work you would complete if you had more
 time.
