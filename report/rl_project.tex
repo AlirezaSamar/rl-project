@@ -148,6 +148,7 @@ Where $\alpha$ is a hyperparameter controlling learning rate and $G_t$ is our Mo
   \theta_{t+1} = \theta_{t} + \alpha G_t\Delta_\theta \text{log} \pi(A_t | S_t, \theta_t)
 \end{equation}
 Notice that unlike PPO, this update method only takes into account current policy, and as such results in much lower sample efficiency. In many instances, due to the high variance of Monte-Carlo sampling methods, an arbitrary baseline $b(s)$ is subtracted from $G_t$ in the update. $b(s)$ does not vary with $a$ and as such reduces per-update variance. \\\newline
+The conflict surrounding implementation details for REINFORCE is with regard to the frequency of updates. Some accounts \citep{10.5555/3312046} suggest updates to the network should be done at every timestep, Others \citep{silver2015} suggest updates on some time horizon $T$, and \citet{williams1992simple} suggests a number of update points, including per-episode (i.e. traditional Monte-Carlo) updates. We chose to implement REINFORCE with per-episode updates, and no baseline. \\\newline
 We choose to include REINFORCE as a baseline policy gradient method, to compare results of our more modern PPO and DQN algorithms.
 \section{Results}
 A presentation of your results, showing how quickly and how well your agent(s)
