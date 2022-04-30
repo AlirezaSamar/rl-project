@@ -12,7 +12,7 @@ from gym_simplifiedtetris.envs import SimplifiedTetrisBinaryEnv as Tetris
 
 NO_EPOCHS = 10000
 EPOCH_STEPS = 2048
-PPO_STEPS = 10
+PPO_STEPS = 80
 GAMMA = 0.99
 LAMB = 0.95
 CLIP = 0.2
@@ -124,6 +124,8 @@ def update(states,actions,probs,rewards,dones):
     return sum(losses)/len(losses)
 
     
+ep_count = 0
+loss = 0
 
 for e in range(NO_EPOCHS):
 
@@ -135,7 +137,6 @@ for e in range(NO_EPOCHS):
     ep_reward = 0
     ep_len = 0
     state = torch.Tensor(env.reset())
-
     for i in range(EPOCH_STEPS):
 
         with torch.no_grad():
@@ -160,10 +161,18 @@ for e in range(NO_EPOCHS):
             r_avg_len.append(ep_len)
             ep_len = 0
             ep_reward = 0
+            ep_count += 1
+            writer.add_scalar("avg_reward",(sum(r_avg)/len(r_avg)),ep_count)
+            writer.add_scalar("avg_len",(sum(r_avg_len)/len(r_avg)),ep_count)
+            writer.add_scalar("loss",loss,ep_count  )
 
     loss = update(states,actions,probs,rewards,dones)  
 
-    print("[ Epoch :",e,"- loss: {:.2e}".format(loss.item()),", running average: {:.2f}]    ".format((sum(r_avg)/len(r_avg))),", running average len: {:.2f}]    ".format((sum(r_avg_len)/len(r_avg))), end='\r')
+    print("[ Epoch :",e,"- loss: {:.2e}".format(loss.item()),", running average: {:.2f}] ".format((sum(r_avg)/len(r_avg))),", running average len: {:.2f}]    ".format((sum(r_avg_len)/len(r_avg))), end='\r')
+
+    if (sum(r_avg)/len(r_avg)) > 200:
+        print("Environment Solved in ",ep_count,"episodes")
+        exit()
 
 
 
