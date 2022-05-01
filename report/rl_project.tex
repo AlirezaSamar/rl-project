@@ -19,7 +19,9 @@
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
 \usepackage{graphicx}
-
+\usepackage{amsmath}
+\usepackage{float}
+\bibliographystyle{bathx}  
 
 % Give your project report an appropriate title!
 
@@ -37,12 +39,12 @@
 % author name.
 
 \author{
-  Alireza Samar, Arnold Gomes, Danny Demarco, 
+  Alireza Samar, Arnold Gomes, Danny Demarco, Tyler Christie
   \\
   Department of Computer Science\\
   University of Bath\\
   Bath, BA2 7AY \\
-  \texttt{\{as4731, ag2342, dd480, rdw41\}@bath.ac.uk} \\
+  \texttt{\{as4731, ag2342, dd480, rdw41, tc905\}@bath.ac.uk} \\
   %% examples of more authors
   %% \And
   %% Coauthor \\
@@ -112,30 +114,12 @@ With these particulars in mind we can see that our agent is incentivised to dire
 
 
 \section{Background}
-
-Testing danny branch
-
-A discussion of reinforcement learning methods that may be effective at solving
-your chosen problem, their strengths and weaknesses for your chosen problem, and any existing
-results in the scientific literature (or publicly available online) on your chosen problem or
-similar problems.
+\textbf{TODO: Explain MDPs}
+\textbf{TODO: Explain basic RL ; Bellman Equation and Dynamic Programming/Optimization problems, Value Iteration Methods, Policy Gradient Methods, online vs offline, off-policy vs on-policy, q value, state value, advantage function}
 
 \section{Method}
 A description of the method(s) used to solve your chosen problem, an explanation
 of how these methods work (in your own words), and an explanation of why you chose these
-<<<<<<< Updated upstream
-specific methods.
-
-\section{Results}
-A presentation of your results, showing how quickly and how well your agent(s)
-learn (i.e. improve their policies). Include informative baselines for comparison (e.g. the best
-possible performance, the performance of an average human, or the performance of an agent
-that selects actions randomly).
-
-\section{Discussion}
-An evaluation of how well you solved your chosen problem.
-
-=======
 specific methods.\\\newline
 
 It was decided that 3 algorithms would be implemented to train our agents so that the different approaches could be compared and contrasted for efficacy against this particular problem. The 3 algorithms selected were; REINFORCE, a traditional policy gradient method chosen as a baseline method, and the more modern DQN and PPO algorithms. To give a better understanding of our chosen method PPO, we will first introduce TRPO, as this is where this method is derived from. 
@@ -176,7 +160,6 @@ PPO solved the Lunar Lander environment in an average of 608 episodes with a sta
   \includegraphics[scale=0.35]{1.png}
   \caption{(left-to-right) Average reward, episode length and loss for PPO.}
 \end{figure}
->>>>>>> Stashed changes
 \section{Future Work}
 A discussion of potential future work you would complete if you had more
 time.
@@ -186,10 +169,8 @@ A discussion of your personal experience with the project, such as
 difficulties or pleasant surprises you encountered while completing it.
 
 
-\section*{References}
-\small
+\bibliography{references}
 
-\normalsize
 \newpage
 \section*{Appendices}
 If you have additional content that you would like to include in the appendices, please do so here.
