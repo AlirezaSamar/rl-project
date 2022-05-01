@@ -41,7 +41,7 @@ def trainAnAgent(agent, displayScores=False, clip=False, render=False, save=Fals
 
         writer.add_scalar("avg_reward",avgScore,i)
         writer.add_scalar("avg_len",avgEpLen,i)
-        writer.add_scalar("loss",avgLoss,i)
+        writer.add_scalar("loss",runningLoss,i)
 
         if displayScores:
             print(f"epsiode {i}, score {score:.2f}, avg score {avgScore:.2f}, epsilon {agent.epsilon:.3f}")
@@ -49,11 +49,11 @@ def trainAnAgent(agent, displayScores=False, clip=False, render=False, save=Fals
             print("Training [" + animation[i % len(animation)] +"]", end="\r")
         if clip and avgScore >= 200:
             nEpisodes = i
-            writer.close()
             break
 
-    print(f"\n {nEpisodes} episodes, {agent.replayMemory.memCntr} transitions encountered,",
-          f" Last 100 avg: {avgScore:.2f}")
+    print(f" {nEpisodes} episodes, {agent.replayMemory.memCntr} transitions encountered,",
+          f"\n Last 100 avg: {avgScore:.2f}, Latest Loss: {runningLoss}")
+    writer.close()
 
     if save:
         filename = input("Enter filename to save agent... ")
@@ -63,7 +63,7 @@ def trainAnAgent(agent, displayScores=False, clip=False, render=False, save=Fals
 
 
 if __name__ == '__main__':
-    nAgents = 1
+    nAgents = 10
     agentScores = []
     totalTime = 0
     maxEpisodes = 1000
@@ -86,7 +86,6 @@ if __name__ == '__main__':
         agent = Agent(gamma=gamma, epsilon=epsilon, epsMin=epsMin, epsDecr=epsDecr,
             batchSize=batchSize, nActions=4, inputDims=[8], lr=lr, c=c, k=k)
 
-        runTime = trainAnAgent(agent, clip=clip, render=render, 
+        trainAnAgent(agent, clip=clip, render=render, 
             displayScores=displayScores, save=saveAgent, nEpisodes=maxEpisodes)
         
-        totalTime += runTime
