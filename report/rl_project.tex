@@ -123,6 +123,7 @@ similar problems.
 \section{Method}
 A description of the method(s) used to solve your chosen problem, an explanation
 of how these methods work (in your own words), and an explanation of why you chose these
+<<<<<<< Updated upstream
 specific methods.
 
 \section{Results}
@@ -134,6 +135,48 @@ that selects actions randomly).
 \section{Discussion}
 An evaluation of how well you solved your chosen problem.
 
+=======
+specific methods.\\\newline
+
+It was decided that 3 algorithms would be implemented to train our agents so that the different approaches could be compared and contrasted for efficacy against this particular problem. The 3 algorithms selected were; REINFORCE, a traditional policy gradient method chosen as a baseline method, and the more modern DQN and PPO algorithms. To give a better understanding of our chosen method PPO, we will first introduce TRPO, as this is where this method is derived from. 
+
+\subsection{TRPO}
+Trust Region Policy Optimization (TRPO) \citep{pmlr-v37-schulman15} is a policy-gradient method for on-policy, online learning. It uses the concept of a 'Trust Region' in policy space, which permits the policy to move only within a specific 'trusted' bound per gradient ascent step. This mitigates the risk of an agent moving into a region of policy space from which it cannot recover from a sample collected under a poor policy. \\\newline
+An advantage estimate is calculated using a sampled discounted return under a policy $\pi$, parameterised by $\theta$, from an episode rollout, and a noisy value function estimate from a function approximator. Importance sampling is used to calculate the policy gradient from the old policy with a different sample distribution, and as such achieves greater sample efficiency than vanilla policy gradient methods (which use current policy to compute gradient). The objective function and target for optimisation is:
+\begin{gather}
+    \max_\theta\; \hat{\mathbb{E}_t}\left[\frac{\pi_\theta(a_t | s_t)}{\pi_{\theta_{old}}(a_t | s_t)}\hat{A_t}\right]\\
+\text{subject to } \hat{\mathbb{E}_t}\left[KL\left[\pi_{\theta_{old}}(\cdot | s_t),\pi_\theta(\cdot|s_t)\right]\right] \leq \delta
+\end{gather}
+Where $KL$ is Kullback-Leibler Divergence \citep{Joyce2011}, and $\delta$ our trust region bound. Whilst the specifics of KL-Divergence are outside the scope of this project, it is essentially a statistical measure of the distance between two probability distributions; the policy update is subject to the constraint that KL-Divergence between the new and old policy must not exceed some hyperparameter $\delta$ for a gradient step. TRPO naturally falls into an Actor-Critic type model, where the value estimation is performed by the critic and the actor encodes the policy distribution. 
+\subsection{PPO}
+Proximal Policy Optimization \citep{schulman2017proximal} is a simplification and improvement over TRPO. Problems with TRPO were perceived to be complexity of implementation, and tractability of computation with regards to the KL-Divergence bound, which is an expensive operation with second-order optimisation required. A simpler bound was found to be more effective:
+\begin{equation} \label{ppoupdate}
+      L^{CLIP}(\theta) =  \hat{\mathbb{E}_t}\left[min(r_t(\theta)\hat{A^t},clip(r_t(\theta),1-\epsilon,1+\epsilon)\hat{A^t})\right]
+\end{equation}
+Where $r_t(\theta)$ is identical to the probability ratio from TRPO ($\frac{\pi_\theta(a_t | s_t)}{\pi_{\theta_{old}}(a_t | s_t)}$). The clip function replaces the KL-Divergence constraint, which clips the policy probability ratio such that the change does not exceed some hyperparameter $\epsilon$, typically 0.2 \citep{schulman2017proximal}. In addition to this, PPO provides some non-trivial code-level optimisations which significantly improve performance over TRPO \citep{Engstrom2020Implementation}. \\\newline
+PPO was chosen for the proposed domain as it is relatively simple to implement, provides relatively good sample efficiency over other policy gradient methods, and is not particularly sensitive to hyperparameters \citep{schulman2017proximal}.
+\subsection{REINFORCE}
+The final method we chose for this environment was REINFORCE \citep{williams1992simple}. REINFORCE is a traditional policy gradient method, but there are conflicting opinions about how exactly it should be implemented, possibly because as \citet{williams1992simple} defines it is fairly vague. The update function for network parameters $\theta$ is defined as \citep{10.5555/3312046}:
+\begin{equation}
+\theta_{t+1} = \theta_{t} + \alpha G_t\frac{\Delta_\theta\pi(A_t| S_t, \theta_t)}{\pi(A_t| S_t, \theta_t)}
+\end{equation}
+Where $\alpha$ is a hyperparameter controlling learning rate and $G_t$ is our Monte-Carlo sampled discounted returns. By exploiting the likelihood ratio trick \citep{silver2015}, we can rewrite this as:
+\begin{equation}
+  \theta_{t+1} = \theta_{t} + \alpha G_t\Delta_\theta \text{log} \pi(A_t | S_t, \theta_t)
+\end{equation}
+Notice that unlike PPO, this update method only takes into account current policy, and as such results in much lower sample efficiency. In many instances, due to the high variance of Monte-Carlo sampling methods, an arbitrary baseline $b(s)$ is subtracted from $G_t$ in the update. $b(s)$ does not vary with $a$ and as such reduces per-update variance. \\\newline
+The conflict surrounding implementation details for REINFORCE is with regard to the frequency of updates. Some accounts \citep{10.5555/3312046} suggest updates to the network should be done at every timestep, Others \citep{silver2015} suggest updates on some time horizon $T$, and \citet{williams1992simple} suggests a number of update points, including per-episode (i.e. traditional Monte-Carlo) updates. We chose to implement REINFORCE with per-episode updates, and no baseline. \\\newline
+Using REINFORCE as a baseline policy gradient method, we are able to compare the results of our more modern PPO and DQN algorithms.
+\section{Results and Discussion}
+Algorithms were coded in base PyTorch \citep{NEURIPS2019_9015}. Due to time constraints, Bayesian Optimization was not carried out to discover optimal hyperparameters. As a result, hyperparameters were sourced from the original papers, or by consulting other online implementations and heuristic search. We make no claim that the hyperparameters used in the below experiments are optimal. Algorithms were run 10 times, and the graphs below are the average of these runs. Linear interpolation was used to fit data points per run to the average run length. Full graphs for every run can be found in Appendix X. 
+\subsection{PPO}
+PPO solved the Lunar Lander environment in an average of 608 episodes with a standard deviation of 102.6:
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.35]{1.png}
+  \caption{(left-to-right) Average reward, episode length and loss for PPO.}
+\end{figure}
+>>>>>>> Stashed changes
 \section{Future Work}
 A discussion of potential future work you would complete if you had more
 time.
