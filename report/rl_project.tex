@@ -114,8 +114,37 @@ With these particulars in mind we can see that our agent is incentivised to dire
 
 
 \section{Background}
-\textbf{TODO: Explain MDPs}
-\textbf{TODO: Explain basic RL ; Bellman Equation and Dynamic Programming/Optimization problems, Value Iteration Methods, Policy Gradient Methods, online vs offline, off-policy vs on-policy, q value, state value, advantage function}
+Reinforcement learning is a powerful tool for decision making under uncertainty. Previous work has been done in solving the lunar lander environment using different techniques. This section will briefly introduce MDPs, Bellman Equation, Policy Gradient Methods, and other methods and then describe their strengths and weaknesses in solving the lunar lander problem.
+
+Markov-decision processes (MDPs) are a type of mathematical model used in decision analysis and operations research. MDPs are used to model decision making in situations where the outcomes of a decision are partly determined by chance and partly by the decision maker's actions. In an MDP, the decision-maker is represented by a "agent" who takes actions in a discrete set of possible states, and a random process determines the state of the world at any given time. The MDP framework allows us to calculate the expected value of any decision, given the agent's current state and the probabilities of different outcomes in each state \citep{sutton1999between}.
+
+MDPs are also used to model problems in machine learning and control theory. In machine learning, MDPs can be used to model the problem of learning how to take actions that maximize a reward. In control theory, MDPs can be used to model the problem of controlling a system to maximize a particular criterion, such as the expected value of the reward.
+
+A common approach for such a state and action pair is Q-learning. In this approach, a Q-table gets updated iteratively to maximize the reward of every given state. This approach is framed by the Bellman Equation:
+
+\begin{equation} \label{Bellman Equation}
+  Q^{\ast}(s,a)=\mathbb{E}_{s^{'}\sim\varepsilon}[r+\gamma{max_{a^{'}}Q^{*}(s^{'},a^{'})}|s,a]
+\end{equation}
+
+Another common approach to solving MDPs is dynamic programming. Dynamic programming is a technique for breaking down a problem into smaller subproblems, solving each subproblem, and then combining the solutions to the subproblems to solve the original problem. This approach can be used in RL because the agent can learn which actions lead to the best outcomes by solving smaller MDPs.
+
+There are a few different ways to implement dynamic programming for RL problems. The most common approach is to use a table to store the solutions to the subproblems. The table can be updated as the agent learns which actions lead to the best outcomes \citep{lewis2009reinforcement}.
+
+The current reward and discounted maximum future reward can be concluded as the optimal value for a given pair of action-state. Since the number of Q-values would be computed as finite, the typical approach to solving iteratively is to use dynamic programming:
+
+\begin{equation}
+  Q_{i+1}(s,a)=\mathbb{E}[r+\gamma{max_{a^{'}}Q_{i}(s^{'},a^{'})}|s,a],{}\lim_{i\rightarrow{\infty}}Q_{i}=Q^{\ast}
+\end{equation}
+
+On the other hand, the policy gradient algorithm works by estimating the gradient of the expected reward function concerning the policy and then adjusting the policy accordingly. 
+
+One of the benefits of the policy gradient algorithm is that it is relatively easy to implement. Additionally, the algorithm can adapt to changes in the environment, allowing the agent to learn new tasks and strategies.
+
+In contrast, while described approaches try to optimise the Bellman Equation, the policy gradient aims to maximise the return by converging toward its policy.
+
+Finally, Vanilla Policy Gradient (VPG) trains a policy known as the on-policy way \citep{peters2006policy}, which is different and often less sample efficient than the off-policy way, such as Deep Q-Network (DQN) \citep{dqn}.
+
+While the off-policy methods take advantage of experiences from previous policies, the policy gradient cannot reduce the bias by reusing experience in picking trajectories of prior policies. This difference describes why policy gradient requires significantly higher training episods to return average \citep{Gadgil2020}.
 
 \section{Method}
 A description of the method(s) used to solve your chosen problem, an explanation
