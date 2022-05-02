@@ -139,6 +139,21 @@ Proximal Policy Optimization \citep{schulman2017proximal} is a simplification an
 \end{equation}
 Where $r_t(\theta)$ is identical to the probability ratio from TRPO ($\frac{\pi_\theta(a_t | s_t)}{\pi_{\theta_{old}}(a_t | s_t)}$). The clip function replaces the KL-Divergence constraint, which clips the policy probability ratio such that the change does not exceed some hyperparameter $\epsilon$, typically 0.2 \citep{schulman2017proximal}. In addition to this, PPO provides some non-trivial code-level optimisations which significantly improve performance over TRPO \citep{Engstrom2020Implementation}. \\\newline
 PPO was chosen for the proposed domain as it is relatively simple to implement, provides relatively good sample efficiency over other policy gradient methods, and is not particularly sensitive to hyperparameters \citep{schulman2017proximal}.
+\subsection{DQN}
+DQN (Deep-Q Networks) \citep{dqn} were the first foray into combining traditional reinforcement learning methods, Q-Learning \citep{qlearning}, with deep neural networks. Revolutionary at the time, it allowed an agent to approximate the Q values of previously intractable large state/action spaces. Using these networks in place of the policy $\pi(s,a)$, or value $q(s,a)$ functions.\\\newline
+They work by feeding in the observable information of the environment, then training the network parameters via gradient descent with the aim of minimising a chosen loss function, typically the Mean Squared Error. The algorithm functions similarly to function approximated Q-learning, however it also incorporates a Replay memory and a target network, to help deal with the instability from function approximators. By using a two separate networks, learning is performed from the stable target network onto the local network. The Replay memory is used to store all transitions $(S_{t},A_{t},R_{t},S_{t+1})$ encountered in the environment, then periodically a batch is sampled from these stored transitions and used to perform an update on the local network parameters, defined as:
+\begin{equation}
+\begin{aligned}
+    &\text{Set} y_{j} = 
+    \begin{cases}
+    r_{j} & \text{ for terminal } s_{t+1}\\    
+    r_{j} + \gamma\text{max}_{a'}Q(s_{t+1},a'; \theta_{2}) & \text{ for non terminal } s_{t+1}
+    \end{cases}\\
+    &\text{Perform gradient descent on } \nabla_{\theta_{1}}L_{\delta}(y_{j},\hat{q}_{1}(S_{j},A_{j};\boldsymbol{\theta}_{1}))
+\end{aligned}
+\end{equation}
+In which every $C$ steps the target network $\theta_{2}$ is updated to the local network $\theta_{1}$.\\\newline
+DQN was chosen for its historical significance, as it has led to many further improvements in modern reinforcement learning, such as the direct descendant \citet{rainbow} an amalgamation of many individual improvements to DQN, which was state of the art for its time, or any other deep reinforcement learning method which have built of the work of \citet{dqn}. 
 \subsection{REINFORCE}
 The final method we chose for this environment was REINFORCE \citep{williams1992simple}. REINFORCE is a traditional policy gradient method, but there are conflicting opinions about how exactly it should be implemented, possibly because as \citet{williams1992simple} defines it is fairly vague. The update function for network parameters $\theta$ is defined as \citep{10.5555/3312046}:
 \begin{equation}
