@@ -73,10 +73,6 @@
 \maketitle
 
 \section{Problem Definition}
-A clear, precise and concise description of your chosen problem,
-including the states, actions, transition dynamics, and the reward function. You will lose
-marks for an unclear, incorrect, or incomplete problem definition.
-
 Application of reinforcement learning methods to modern artificial intelligence applications are both interesting and challenging, especially when the environment is unknown and there may be delayed rewards. This group project is an investigation into some of these methods and will attempt to train a number of agents to land a simulated spacecraft on the moon and compare their results for efficacy. To enable this the choice was made to make use of the LunarLander-v2 environment provided by OpenAI in their Gym package. The environment provides a classic rocket trajectory problem in which the rocket, starting at an elevated position is tasked with landing safely on a designated landing pad. There are two options in using this environment, discrete or continuous and we have chosen to use the discrete option. The 2d environment consists of the moon on the lower boundary with a section of it designated as the landing pad limited by the area between 2 flags, and an area of space above it in which the rocket may fly. The rocket itself is fitted with 2 legs to its base and three engines to provide thrust vertically or horizontally. To understand how the environment functions in more depth we can break it down into 4 main sections:
 
 
@@ -147,10 +143,6 @@ Finally, Vanilla Policy Gradient (VPG) trains a policy known as the on-policy wa
 While the off-policy methods take advantage of experiences from previous policies, the policy gradient cannot reduce the bias by reusing experience in picking trajectories of prior policies. This difference describes why policy gradient requires significantly higher training episods to return average \citep{Gadgil2020}.
 
 \section{Method}
-A description of the method(s) used to solve your chosen problem, an explanation
-of how these methods work (in your own words), and an explanation of why you chose these
-specific methods.\\\newline
-
 It was decided that 3 algorithms would be implemented to train our agents so that the different approaches could be compared and contrasted for efficacy against this particular problem. The 3 algorithms selected were; REINFORCE, a traditional policy gradient method chosen as a baseline method, and the more modern DQN and PPO algorithms. To give a better understanding of our chosen method PPO, we will first introduce TRPO, as this is where this method is derived from. 
 
 \subsection{TRPO}
