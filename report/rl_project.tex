@@ -185,7 +185,7 @@ The final method we chose for this environment was REINFORCE \citep{williams1992
 \begin{equation}
 \theta_{t+1} = \theta_{t} + \alpha G_t\frac{\Delta_\theta\pi(A_t| S_t, \theta_t)}{\pi(A_t| S_t, \theta_t)}
 \end{equation}
-Where $\alpha$ is a hyperparameter controlling learning rate and $G_t$ is our Monte-Carlo sampled discounted returns. By exploiting the likelihood ratio trick \citep{silver2015}, we can rewrite this as:
+Where $\alpha$ is a hyperparameter controlling learning rate, $G_t$ is our Monte-Carlo sampled discounted returns, and $A_t,S_t$ are sampled actions and states respectively from a trajectory collected under policy $\pi$. By exploiting the likelihood ratio trick \citep{silver2015}, we can rewrite this as:
 \begin{equation}
   \theta_{t+1} = \theta_{t} + \alpha G_t\Delta_\theta \text{log} \pi(A_t | S_t, \theta_t)
 \end{equation}
@@ -200,6 +200,13 @@ PPO solved the Lunar Lander environment in an average of 608 episodes with a sta
   \centering
   \includegraphics[scale=0.35]{1.png}
   \caption{(left-to-right) Average reward, episode length and loss for PPO.}
+\end{figure}
+\subsection{REINFORCE}
+REINFORCE only solved this environment adequately in 3 out of 10 runs. Non-terminating runs were cut off after 5000 episodes:
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.35]{2.png}
+  \caption{(left-to-right) Average reward, episode length and loss for REINFORCE.}
 \end{figure}
 \section{Future Work}
 A discussion of potential future work you would complete if you had more
