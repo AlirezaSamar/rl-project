@@ -104,7 +104,7 @@ for i in range(NO_EPOCHS):
     if i%10 == 0:
         print("Episode {}".format(i),", loss : {:.2f}".format(loss),", ep_reward: {:.2f}".format(ep_reward),", average : {:.2f}".format(numpy.average(tot_rewards)))
 
-    if (numpy.average(tot_rewards) >=200 and len(tot_rewards) == 100):
+    if (numpy.average(tot_rewards) >=200 and len(tot_rewards) == 100) or ep_count >= 5000:
         print("100 episode rolling average > 200, stopping...")
         writer.close()
         exit()
