@@ -25,7 +25,7 @@
 
 % Give your project report an appropriate title!
 
-\title{RL Project Template}
+\title{Comparing a Range of Reinforcement Learning Algorithms to Solve a Classic Rocket Trajectory Problem}
 
 
 % The \author macro works with any number of authors. There are two
@@ -39,12 +39,12 @@
 % author name.
 
 \author{
-  Alireza Samar, Arnold Gomes, Danny Demarco, Tyler Christie
+  Alireza Samar, Arnold Gomes, Danny Demarco, Joseph Dowling, Robert Williams, Tyler Christie
   \\
   Department of Computer Science\\
   University of Bath\\
   Bath, BA2 7AY \\
-  \texttt{\{as4731, ag2342, dd480, rdw41, tc905\}@bath.ac.uk} \\
+  \texttt{\{as4731, ag2342, dd480, jtd38, rdw41, tc905\}@bath.ac.uk} \\
   %% examples of more authors
   %% \And
   %% Coauthor \\
@@ -70,7 +70,12 @@
 
 \begin{document}
 
+
 \maketitle
+\newpage
+\tableofcontents
+\listoffigures
+\newpage
 
 \section{Problem Definition}
 Application of reinforcement learning methods to modern artificial intelligence applications are both interesting and challenging, especially when the environment is unknown and there may be delayed rewards. This group project is an investigation into some of these methods and will attempt to train a number of agents to land a simulated spacecraft on the moon and compare their results for efficacy. To enable this the choice was made to make use of the LunarLander-v2 environment provided by OpenAI in their Gym package. The environment provides a classic rocket trajectory problem in which the rocket, starting at an elevated position is tasked with landing safely on a designated landing pad. There are two options in using this environment, discrete or continuous and we have chosen to use the discrete option. The 2d environment consists of the moon on the lower boundary with a section of it designated as the landing pad limited by the area between 2 flags, and an area of space above it in which the rocket may fly. The rocket itself is fitted with 2 legs to its base and three engines to provide thrust vertically or horizontally. To understand how the environment functions in more depth we can break it down into 4 main sections:
