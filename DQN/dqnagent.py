@@ -1,6 +1,5 @@
 import torch as T
 import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
 
@@ -41,26 +40,22 @@ class ReplayBuffer:
 
 class DQNetwork(nn.Module):
     def __init__(self, lr, inputDims, nActions, 
-            fc1Dims=256, fc2Dims=256):
+            fc1Dims=256, fc2Dims=256, device='cpu'):
         super(DQNetwork, self).__init__()
 
-        self.inputDims = inputDims
-        self.fc1Dims = fc1Dims
-        self.fc2Dims = fc2Dims
-        self.nActions = nActions
-
-        self.fc1 = nn.Linear(*self.inputDims, self.fc1Dims)
-        self.fc2 = nn.Linear(self.fc1Dims, self.fc2Dims)
-        self.fc3 = nn.Linear(self.fc2Dims, self.nActions)
+        self.fcls = nn.Sequential(
+            nn.Linear(*inputDims, fc1Dims),
+            nn.ReLU(),
+            nn.Linear(fc1Dims, fc2Dims),
+            nn.ReLU(),
+            nn.Linear(fc2Dims, nActions)
+        )
         self.optimizer = optim.Adam(self.parameters(), lr=lr)
         self.loss = nn.MSELoss()
-        self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
-        self.to(self.device)
+        self.to(device)
 
     def forward(self, state):
-        x = F.relu(self.fc1(state))
-        x = F.relu(self.fc2(x))
-        actionValues = self.fc3(x)
+        actionValues = self.fcls(state)
 
         return actionValues
 
@@ -79,18 +74,19 @@ class Agent():
         self.action_space = np.arange(nActions)
         self.batchSize = batchSize
 
+        self.device = self.device = T.device('cuda:0' if T.cuda.is_available() else 'cpu')
         self.localNet = DQNetwork(self.lr, nActions=nActions, 
-            inputDims=inputDims)
+            inputDims=inputDims, device=self.device)
         self.targetNet = DQNetwork(self.lr, nActions=nActions, 
-            inputDims=inputDims)
-
+            inputDims=inputDims, device=self.device)
+        
         self.replayMemory = ReplayBuffer(inputDims, maxMemorySize)
 
     def choose_action(self, observation):
         if np.random.rand() > self.epsilon:
-            state = T.tensor(np.array(observation)).to(self.localNet.device)
+            state = T.tensor(np.array(observation)).to(self.device)
             with T.no_grad():
-                actions = self.localNet.forward(state)
+                actions = self.localNet(state)
             action = T.argmax(actions).item()
         else:
             action = np.random.choice(self.action_space)
@@ -106,16 +102,16 @@ class Agent():
 
             batchIndexes = np.arange(self.batchSize, dtype=np.int32)
             (stateBatch, actionBatch, newStateBatch, rewardBatch,
-            terminalBatch) = self.replayMemory.sample(self.batchSize, self.localNet.device)
+            terminalBatch) = self.replayMemory.sample(self.batchSize, self.device)
             
-            qLocal = self.localNet.forward(stateBatch)[batchIndexes, actionBatch]
+            qLocal = self.localNet(stateBatch)[batchIndexes, actionBatch]
             with T.no_grad():
-                qNext = self.targetNet.forward(newStateBatch).detach()
+                qNext = self.targetNet(newStateBatch).detach()
             qNext[terminalBatch] = 0.0
 
             qTarget = rewardBatch + self.gamma * T.max(qNext, dim=1)[0]
 
-            loss = self.localNet.loss(qTarget, qLocal).to(self.localNet.device)
+            loss = self.localNet.loss(qTarget, qLocal).to(self.device)
             loss.backward()
             self.localNet.optimizer.step()
 

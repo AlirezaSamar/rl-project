@@ -1,7 +1,7 @@
 import gym
 from dqnagent import Agent
-import matplotlib.pyplot as plt
 import numpy as np
+import argparse
 from torch.utils.tensorboard import SummaryWriter
 
 def trainAnAgent(agent, displayScores=False, clip=False, render=False, save=False, nEpisodes = 270):
@@ -63,7 +63,17 @@ def trainAnAgent(agent, displayScores=False, clip=False, render=False, save=Fals
 
 
 if __name__ == '__main__':
-    nAgents = 10
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-a", "--agents", required=False, help="The number of agents to train")
+    args = parser.parse_args()
+
+    try:
+        argAgents = int(args.agents) if args.agents else 1
+    except:
+        print("Warning '-a' argument must be an integer")
+        exit()
+    nAgents = argAgents
+
     agentScores = []
     totalTime = 0
     maxEpisodes = 1000
