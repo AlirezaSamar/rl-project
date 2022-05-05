@@ -72,11 +72,6 @@
 
 
 \maketitle
-\newpage
-\tableofcontents
-\listoffigures
-\newpage
-
 \section{Problem Definition}
 Application of reinforcement learning methods to modern artificial intelligence applications are both interesting and challenging, especially when the environment is unknown and there may be delayed rewards. This group project is an investigation into some of these methods and will attempt to train a number of agents to land a simulated spacecraft on the moon and compare their results for efficacy. To enable this the choice was made to make use of the LunarLander-v2 environment provided by OpenAI in their Gym package. The environment provides a classic rocket trajectory problem in which the rocket, starting at an elevated position is tasked with landing safely on a designated landing pad. There are two options in using this environment, discrete or continuous and we have chosen to use the discrete option. The 2d environment consists of the moon on the lower boundary with a section of it designated as the landing pad limited by the area between 2 flags, and an area of space above it in which the rocket may fly. The rocket itself is fitted with 2 legs to its base and three engines to provide thrust vertically or horizontally. To understand how the environment functions in more depth we can break it down into 4 main sections:
 
@@ -192,7 +187,7 @@ Where $\alpha$ is a hyperparameter controlling learning rate, $G_t$ is our Monte
 Notice that unlike PPO, this update method only takes into account current policy, and as such results in much lower sample efficiency. In many instances, due to the high variance of Monte-Carlo sampling methods, an arbitrary baseline $b(s)$ is subtracted from $G_t$ in the update. $b(s)$ does not vary with $a$ and as such reduces per-update variance. \\\newline
 The conflict surrounding implementation details for REINFORCE is with regard to the frequency of updates. Some accounts \citep{10.5555/3312046} suggest updates to the network should be done at every timestep, Others \citep{silver2015} suggest updates on some time horizon $T$, and \citet{williams1992simple} suggests a number of update points, including per-episode (i.e. traditional Monte-Carlo) updates. We chose to implement REINFORCE with per-episode updates, and no baseline. \\\newline
 Using REINFORCE as a baseline policy gradient method, we are able to compare the results of our more modern PPO and DQN algorithms.
-\section{Results and Discussion}
+\section{Results}
 Algorithms were coded in base PyTorch \citep{NEURIPS2019_9015}. Due to time constraints, Bayesian Optimization was not carried out to discover optimal hyperparameters. As a result, hyperparameters were sourced from the original papers, or by consulting other online implementations and heuristic search. We make no claim that the hyperparameters used in the below experiments are optimal. Algorithms were run 10 times, and the graphs below are the average of these runs. Linear interpolation was used to fit data points per run to the average run length. Full graphs for every run can be found in Appendix X. 
 \subsection{PPO}
 PPO solved the Lunar Lander environment in an average of 608 episodes with a standard deviation of 102.6:
@@ -200,13 +195,14 @@ PPO solved the Lunar Lander environment in an average of 608 episodes with a sta
   \centering
   \includegraphics[scale=0.35]{1.png}
   \caption{(left-to-right) Average reward, episode length and loss for PPO.}
+  \label{ppo}
 \end{figure}
 \subsection{REINFORCE}
 REINFORCE only solved this environment adequately in 3 out of 10 runs. Non-terminating runs were cut off after 5000 episodes:
 \begin{figure}[H]
   \centering
   \includegraphics[scale=0.35]{2.png}
-  \caption{(left-to-right) Average reward, episode length and loss for REINFORCE.}
+  \caption{(left-to-right) Average reward, episode length and loss for REINFORCE.} 
 \end{figure}
 \subsection{DQN}
 DQN solved the Lunar Lander environment in an average of 311 episodes with a standard deviation of 77.6:
@@ -214,7 +210,14 @@ DQN solved the Lunar Lander environment in an average of 311 episodes with a sta
   \centering
   \includegraphics[scale=0.35]{3.png}
   \caption{(left-to-right) Average reward, episode length and loss for DQN.}
+  \label{dqn}
 \end{figure}
+\section{Discussion}
+Our results suggest that DQN is the best fit for this environment, with the shortest time to solve and the least deviation between runs. PPO is generally considered a more stable method due to the update function; the clip punishes actions that have a negative advantage that become more likely heavily, and rewards actions with positive advantage that become more likely only modestly. This is why we see a longer time to solve for PPO, as it is more cautious to back itself into a region of policy space. However, it appears we do not reap the benefits of PPO in such a simple environment. Interestingly, if we look at the individual runs for PPO and DQN as seen in Appendix \ref{runs}
+,we see that PPO runs are grouped much more tightly throughout training and slightly diverge towards the end of training, approximately after reaching an average reward of 100. DQN at first glance appears to have more inter-run variance earlier on during training, and we even see one run with vastly different results to others. It is likely that, should we increase our sample size, we would see a much higher standard deviation between runs for DQN, as this is what we would expect. DQN tends to suffer from instability to a greater extent than PPO for a few reasons. Firstly, it is an offline method, and as such it learns from minibatches from the replay buffer. The replay buffer contains data from previous policies, and as such may introduce some irrelevant data into our loss calculations. This is a phenomenon known as distribution shift \citep{pmlr-v97-fu19a}, and can make convergence behaviour hard to understand. Evidence for this is the outlier run seen in Appendix \ref{runs}, which follows a completely different trajectory to other runs despite having the exact same hyperparameters. 
+Secondly, we have a non-stationary target for optimization; the target network, causing a `moving goalpost' effect for optimisation. This can be mitigated with less frequent synchronisation between the target and prediction networks, however this is a purely empirical countermeasure and behaviour is not well understood in the literature.\\\newline
+Another feature of note is the distinction between episode lengths seen between Figures \ref{ppo} and \ref{dqn} for PPO and DQN respectively. We see that at its peak, PPO solution times are almost half the length of DQN. Moreover, if we again reference Appendix \ref{runs}, we see that episode lengths for PPO ramp up much more slowly than DQN. It appears that DQN is quickly finding what is arguably a suboptimal policy - slow landings with hovering, contrasted to what appears to be a more direct approach by PPO. The difference in speed can clearly be seen in the demonstration video supplied. This can be attributed to the Q-learning update, which simply takes the max over available actions. A max over noisy Q-value estimates supplied by the neural network is likely to result in overestimation bias, a property which has been demonstrated in Q-learning \citep{thrun1993issues,hasselt2010double}, and is exacerbated by the use of function approximators. Overestimation of the `hovering' behaviour seen with the DQN is likely causing the repetition of this behaviour and the lack of exploration in policy space.\\\newline
+The behaviour of REINFORCE in this scenario is what we expected, showing a trend of high variance. This variance is mainly due to the Monte-Carlo episodic nature of the updates. Unlike Temporal Difference methods \citep{tesauro1995temporal}, which use some portion of true sampled returns in addition to a bootstrap, Monte-Carlo methods use the true sample return as an update. As a result, updates will vary greatly as per-episode variance is high, and as such it is a fairly unstable learning method. REINFORCE is a true online method, which does not take into account the previous policy or any previous experience, and this is likely why we see REINFORCE converge on some runs and get stuck in local maxima on others.  
 \section{Future Work}
 A discussion of potential future work you would complete if you had more
 time.
@@ -232,6 +235,7 @@ difficulties or pleasant surprises you encountered while completing it.
 
 \newpage
 \section*{Appendices}
+\appendix
 If you have additional content that you would like to include in the appendices, please do so here.
 There is no limit to the length of your appendices, but we are not obliged to read them in their entirety while marking. The main body of your report should contain all essential information, and content in the appendices should be clearly referenced where it's needed elsewhere.
 
@@ -241,8 +245,25 @@ Appendices should include (1) a detailed description of the problem domain,
 including the states, actions, reward function, and transition dynamics; (2) all experimental
 details so that the reader can fully replicate your experiments; and (3) how you selected your
 hyperparameters (if applicable).
-\subsection*{Appendix A: Example Appendix 1}
-\subsection*{Appendix B: Example Appendix 2}
+\section{All Runs For All Algorithms}\label{runs}
+\subsection*{PPO}
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.35]{6.png}
+  \caption{(left-to-right) Average reward, episode length and loss for PPO.}
+\end{figure}
+\subsection*{DQN}
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.35]{5.png}
+  \caption{(left-to-right) Average reward, episode length and loss for PPO.}
+\end{figure}
+\subsection*{REINFORCE}
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=0.35]{4.png}
+  \caption{(left-to-right) Average reward, episode length and loss for PPO.}
+\end{figure}
 
 \end{document}
 
