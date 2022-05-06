@@ -219,9 +219,6 @@ Secondly, we have a non-stationary target for optimization; the target network, 
 Another feature of note is the distinction between episode lengths seen between Figures \ref{ppo} and \ref{dqn} for PPO and DQN respectively. We see that at its peak, PPO solution times are almost half the length of DQN. Moreover, if we again reference Appendix \ref{runs}, we see that episode lengths for PPO ramp up much more slowly than DQN. It appears that DQN is quickly finding what is arguably a suboptimal policy - slow landings with hovering, contrasted to what appears to be a more direct approach by PPO. The difference in speed can clearly be seen in the demonstration video supplied. This can be attributed to the Q-learning update, which simply takes the max over available actions. A max over noisy Q-value estimates supplied by the neural network is likely to result in overestimation bias, a property which has been demonstrated in Q-learning \citep{thrun1993issues,hasselt2010double}, and is exacerbated by the use of function approximators. Overestimation of the `hovering' behaviour seen with the DQN is likely causing the repetition of this behaviour and the lack of exploration in policy space.\\\newline
 The behaviour of REINFORCE in this scenario is what we expected, showing a trend of high variance. This variance is mainly due to the Monte-Carlo episodic nature of the updates. Unlike Temporal Difference methods \citep{tesauro1995temporal}, which use some portion of true sampled returns in addition to a bootstrap, Monte-Carlo methods use the true sample return as an update. As a result, updates will vary greatly as per-episode variance is high, and as such it is a fairly unstable learning method. REINFORCE is a true online method, which does not take into account the previous policy or any previous experience, and this is likely why we see REINFORCE converge on some runs and get stuck in local maxima on others.  
 \section{Future Work}
-A discussion of potential future work you would complete if you had more
-time.
-
 The hyperparameters that have been used for each of the algorithms in this project may not be optimal, as has been previously mentioned. This is one area that could certainly be improved given more time. This could be done by applying a Bayesian Optimisation method, an approach that uses Bayes theorum to build a probibalistic model to optimise the objective function. This allows for selection of the hyperparemeters with the highest likelihood of effectiveness and can dramatically improve performance.
 
 As DQN was introduced many years ago now, there has since been considerable work spent analysing and improving the algorithm. For future work we would seek to implement the much improved and much more complicated state of the art improvement, Rainbow \citep{rainbow}, an algorithm built from six individual improvements appended and combined with DQN. Work has been performed analysing Rainbow and found that it is a large improvement over base DQN in our chosen environment. Then additionally, among the included improvements, distributional RL \citep{distributionalrl} was the most necessary within this environment \cite{revisitingrainbow}. This is something we would like to examine and affirm in future work. 
@@ -237,15 +234,6 @@ Specific difficulties faced during algorithm development were related mostly to 
 \newpage
 \section*{Appendices}
 \appendix
-If you have additional content that you would like to include in the appendices, please do so here.
-There is no limit to the length of your appendices, but we are not obliged to read them in their entirety while marking. The main body of your report should contain all essential information, and content in the appendices should be clearly referenced where it's needed elsewhere.
-
-
-
-Appendices should include (1) a detailed description of the problem domain,
-including the states, actions, reward function, and transition dynamics; (2) all experimental
-details so that the reader can fully replicate your experiments; and (3) how you selected your
-hyperparameters (if applicable).
 \section{All Runs For All Algorithms}\label{runs}
 \subsection*{PPO}
 \begin{figure}[H]
@@ -257,14 +245,33 @@ hyperparameters (if applicable).
 \begin{figure}[H]
   \centering
   \includegraphics[scale=0.35]{5.png}
-  \caption{(left-to-right) Average reward, episode length and loss for PPO.}
+  \caption{(left-to-right) Average reward, episode length and loss for DQN.}
 \end{figure}
 \subsection*{REINFORCE}
 \begin{figure}[H]
   \centering
   \includegraphics[scale=0.35]{4.png}
-  \caption{(left-to-right) Average reward, episode length and loss for PPO.}
+  \caption{(left-to-right) Average reward, episode length and loss for REINFORCE.}
 \end{figure}
 
+\section{Hyperparameter and Architecture Choices}\label{specifics}
+\subsection*{PPO}
+
+\subsection*{DQN}
+Hyperparameters used with DQN were as follows:
+\begin{itemize}
+    \item A decay rate of $\gamma=0.99$  
+    \item An initial exploration rate of $\epsilon=1.0$ 
+    \item A mininimum exploration rate of 0.01 
+    \item A rate of linear exploration decrease of $1*10^{-4}$ 
+    \item A batchSize of 64 
+    \item A Learning rate of 0.0005
+    \item A target network update rate of every 4 environment steps
+    \item A batch sampling rate rate of every environment step
+\end{itemize}
+The network architecture used was chosen in accordance to recommendations in \citep{revisitingrainbow}.
+We used two fully connected layers with 256 neurons and relu activations, followed by the final output layer. 
+
+\subsection*{REINFORCE}
 \end{document}
 
