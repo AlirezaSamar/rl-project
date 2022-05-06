@@ -8,12 +8,10 @@ from collections import deque
 writer = SummaryWriter()
 import numpy
 
-NO_EPOCHS = 10000
+NO_EPOCHS = 5000
 EP_STEPS = 1000
 
 GAMMA = 0.99
-LAMB = 0.95
-CLIP = 0.2
 lr = 1e-3
 
 class Actor(nn.Module):
@@ -65,6 +63,19 @@ def update(probs, rewards):
 
     return loss
 
+def evaluate():
+    test_env = gym.make("LunarLander-v2")
+
+    for _ in range(20):
+        state = torch.Tensor(env.reset())
+        done = False
+        while not done:
+            with torch.no_grad():
+                _, action = actor(state)
+                next_state, reward, done, _ = env.step(action.item())
+                state = torch.Tensor(next_state)
+                env.render()
+
 tot_rewards = deque(maxlen=100)
 avg_len =  deque(maxlen=100)
 ep_count = 0
@@ -75,6 +86,9 @@ for i in range(NO_EPOCHS):
     probs = []
     rewards = []
     done = False
+    if ep_count == 2000:
+        evaluate()
+        exit()
     for _ in range(EP_STEPS):
         dist, action = actor(torch.Tensor(state))
 

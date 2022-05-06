@@ -76,7 +76,7 @@ if __name__ == '__main__':
 
     agentScores = []
     totalTime = 0
-    maxEpisodes = 1000
+    maxEpisodes = 5000
 
     clip=True
     saveAgent=False

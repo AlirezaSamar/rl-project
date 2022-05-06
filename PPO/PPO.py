@@ -10,18 +10,17 @@ import numpy
 
 from gym_simplifiedtetris.envs import SimplifiedTetrisBinaryEnv as Tetris
 
-NO_EPOCHS = 10000
+NO_EPOCHS = 5000
 EPOCH_STEPS = 2048
 PPO_STEPS = 80
 GAMMA = 0.99
-LAMB = 0.95
 CLIP = 0.2
 lr_a = 3e-4
 lr_c = 1e-3
 
 class Policy(nn.Module):
 
-    def __init__(self, obs, n_actions, hidden_size = 128):
+    def __init__(self, obs, n_actions, hidden_size = 256):
 
         super(Policy, self).__init__()
 
@@ -127,6 +126,19 @@ def update(states,actions,probs,rewards,dones):
 ep_count = 0
 loss = 0
 
+def evaluate():
+    test_env = gym.make("LunarLander-v2")
+
+    for _ in range(20):
+        state = torch.Tensor(env.reset())
+        done = False
+        while not done:
+            with torch.no_grad():
+                action, _ = agent.act(state)
+                next_state, reward, done, _ = env.step(action.item())
+                state = torch.Tensor(next_state)
+                env.render()
+
 for e in range(NO_EPOCHS):
 
     states = []
@@ -138,7 +150,6 @@ for e in range(NO_EPOCHS):
     ep_len = 0
     state = torch.Tensor(env.reset())
     for i in range(EPOCH_STEPS):
-
         with torch.no_grad():
             action, log_prob = agent.act(state)
 
@@ -170,9 +181,9 @@ for e in range(NO_EPOCHS):
 
     print("[ Epoch :",e,"- loss: {:.2e}".format(loss.item()),", running average: {:.2f}] ".format((sum(r_avg)/len(r_avg))),", running average len: {:.2f}]    ".format((sum(r_avg_len)/len(r_avg))), end='\r')
 
-    if (sum(r_avg)/len(r_avg)) > 200:
+    if (sum(r_avg)/len(r_avg)) > 240:
         print("Environment Solved in ",ep_count,"episodes")
-        exit()
+        evaluate()
 
 
 

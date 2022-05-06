@@ -21,6 +21,7 @@
 \usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{float}
+\usepackage{siunitx}
 \bibliographystyle{bathx}  
 
 % Give your project report an appropriate title!
@@ -73,7 +74,7 @@
 
 \maketitle
 \section{Problem Definition}
-Application of reinforcement learning methods to modern artificial intelligence applications are both interesting and challenging, especially when the environment is unknown and there may be delayed rewards. This group project is an investigation into some of these methods and will attempt to train a number of agents to land a simulated spacecraft on the moon and compare their results for efficacy. To enable this the choice was made to make use of the LunarLander-v2 environment provided by OpenAI in their Gym package. The environment provides a classic rocket trajectory problem in which the rocket, starting at an elevated position is tasked with landing safely on a designated landing pad. There are two options in using this environment, discrete or continuous and we have chosen to use the discrete option. The 2d environment consists of the moon on the lower boundary with a section of it designated as the landing pad limited by the area between 2 flags, and an area of space above it in which the rocket may fly. The rocket itself is fitted with 2 legs to its base and three engines to provide thrust vertically or horizontally. To understand how the environment functions in more depth we can break it down into 4 main sections:
+Application of reinforcement learning methods to modern artificial intelligence applications are both interesting and challenging, especially when environment transitions are unknown and there may be delayed rewards. This group project is an investigation into some of these methods and will attempt to train a number of agents to land a simulated spacecraft on the moon and compare their results for efficacy. To enable this, we use the LunarLander-v2 environment provided by OpenAI Gym \citep{1606.01540}. The environment provides a classic rocket trajectory problem in which the rocket, starting at an elevated position is tasked with landing safely on a designated landing pad. There are two options in using this environment, discrete or continuous and we have chosen to use the discrete option. The 2d environment consists of the moon on the lower boundary with a section of it designated as the landing pad limited by the area between 2 flags, and an area of space above it in which the rocket may fly. The rocket itself is fitted with 2 legs to its base and three engines to provide thrust vertically or horizontally. To understand how the environment functions in more depth we can break it down into 4 main sections:
 
 
 \begin{enumerate}
@@ -87,9 +88,7 @@ Application of reinforcement learning methods to modern artificial intelligence 
   \end{enumerate}
   \item Actions\\
     There are 4 discrete actions available at any point: no action, fire right engine (left orientation), fire left engine (right orientation), fire main engine (upward orientation). Fuel is considered infinite and there is no range of acceleration, engines are binary and either on or off.
-  
-  \item Rewards\\
-  Agents are incentivised/decentivised with the following reward structure:\\
+  \item Rewards
   \begin{enumerate}
     \item Positive Rewards\\
     The reward for succesfully moving from the starting state and coming to rest at the landing pad range between 100-140 points depending on the accuracy of the landing. Each leg that is in contact with the ground provides an extra 10 points to incentivise a level approach to the landing pad. Once an episode is succesfully solved, a reward of 200 points is awarded.
@@ -112,35 +111,32 @@ With these particulars in mind we can see that our agent is incentivised to dire
 \section{Background}
 Reinforcement learning is a powerful tool for decision making under uncertainty. Previous work has been done in solving the lunar lander environment using different techniques. This section will briefly introduce MDPs, Bellman Equation, Policy Gradient Methods, and other methods and then describe their strengths and weaknesses in solving the lunar lander problem.
 
-Markov-decision processes (MDPs) are a type of mathematical model used in decision analysis and operations research. MDPs are used to model decision making in situations where the outcomes of a decision are partly determined by chance and partly by the decision maker's actions. In an MDP, the decision-maker is represented by a "agent" who takes actions in a discrete set of possible states, and a random process determines the state of the world at any given time. The MDP framework allows us to calculate the expected value of any decision, given the agent's current state and the probabilities of different outcomes in each state \citep{sutton1999between}.
+Markov-decision processes (MDPs) are a type of mathematical model used in decision analysis and operations research. MDPs are used to model decision making environments (deterministic or stochastic) where information required for a decision is entirely contained in the previous state, not a history of states. In an MDP, the decision-maker is represented by an `agent' who takes actions in a finite set of possible states, and a transition matrix determines the next state. The MDP framework allows an agent to learn a Markov policy; a state-action mapping function that maximises expected discounted future reward from a given state \citep{sutton1999between}.
 
-MDPs are also used to model problems in machine learning and control theory. In machine learning, MDPs can be used to model the problem of learning how to take actions that maximize a reward. In control theory, MDPs can be used to model the problem of controlling a system to maximize a particular criterion, such as the expected value of the reward.
+MDPs find application in machine learning and control theory as a simplistic environment model. In machine learning, MDPs can be used to model the problem of learning how to take actions that maximize a reward. In control theory, MDPs can be used to model the problem of controlling a system to maximise or minimise a particular criterion, such as the expected value of the reward.
 
-A common approach for such a state and action pair is Q-learning. In this approach, a Q-table gets updated iteratively to maximize the reward of every given state. This approach is framed by the Bellman Equation:
+There are many methods for learning such a Markov policy, one of which is Q-learning. In this approach, a Q-table tabulates a set of state-action pairs, the values of which are updated via a Bellman equation:
 
 \begin{equation} \label{Bellman Equation}
   Q^{\ast}(s,a)=\mathbb{E}_{s^{'}\sim\varepsilon}[r+\gamma{max_{a^{'}}Q^{*}(s^{'},a^{'})}|s,a]
 \end{equation}
 
-Another common approach to solving MDPs is dynamic programming. Dynamic programming is a technique for breaking down a problem into smaller subproblems, solving each subproblem, and then combining the solutions to the subproblems to solve the original problem. This approach can be used in RL because the agent can learn which actions lead to the best outcomes by solving smaller MDPs.
+Dynamic programming, a class of solutions for solving such Bellman equations, finds its roots in optimal control theory. It is a technique for breaking down a problem into smaller subproblems, solving each subproblem, and then combining the solutions to the subproblems to solve the original problem.
 
-There are a few different ways to implement dynamic programming for RL problems. The most common approach is to use a table to store the solutions to the subproblems. The table can be updated as the agent learns which actions lead to the best outcomes \citep{lewis2009reinforcement}.
+There are a few different ways to implement dynamic programming for RL problems. For small state spaces, solutions may be tabulated. The table can be updated as the agent learns which actions lead to the best outcomes \citep{lewis2009reinforcement}. For intractable state-action spaces, a function approximator is used. 
 
-The current reward and discounted maximum future reward can be concluded as the optimal value for a given pair of action-state. Since the number of Q-values would be computed as finite, the typical approach to solving iteratively is to use dynamic programming:
+The current reward and discounted maximum future reward can be described as the optimal value for a given pair of action-state. Since the number of Q-values would be computed as finite, the typical approach to solving iteratively is to use dynamic programming:
 
 \begin{equation}
   Q_{i+1}(s,a)=\mathbb{E}[r+\gamma{max_{a^{'}}Q_{i}(s^{'},a^{'})}|s,a],{}\lim_{i\rightarrow{\infty}}Q_{i}=Q^{\ast}
 \end{equation}
 
-On the other hand, the policy gradient algorithm works by estimating the gradient of the expected reward function concerning the policy and then adjusting the policy accordingly. 
+In contrasted to value iteration approaches, policy gradient methods work by directly estimating a distribution that encodes a Markov policy. 
 
-One of the benefits of the policy gradient algorithm is that it is relatively easy to implement. Additionally, the algorithm can adapt to changes in the environment, allowing the agent to learn new tasks and strategies.
+Advantages of policy gradient methods include generally better exploration than $\epsilon$-greedy methods due to the gaussian noise in their distribution (as well as optional addition of an entropy factor), and avoidance of problems like overestimation bias, found in Q-learning \citep{hasselt2010double}. 
+Vanilla Policy Gradient (VPG) is an on-policy method \citep{peters2006policy} amongst others we discuss such as TRPO, PPO and REINFORCE, and these methods are often less sample efficient than the off-policy, such as Deep Q-Network (DQN) \citep{dqn}.
 
-In contrast, while described approaches try to optimise the Bellman Equation, the policy gradient aims to maximise the return by converging toward its policy.
-
-Finally, Vanilla Policy Gradient (VPG) trains a policy known as the on-policy way \citep{peters2006policy}, which is different and often less sample efficient than the off-policy way, such as Deep Q-Network (DQN) \citep{dqn}.
-
-While the off-policy methods take advantage of experiences from previous policies, the policy gradient cannot reduce the bias by reusing experience in picking trajectories of prior policies. This difference describes why policy gradient requires significantly higher training episods to return average \citep{Gadgil2020}.
+While the off-policy methods take advantage of experiences from previous policies, policy gradient methods generally reuse less experience. This difference describes why policy gradient requires significantly higher sample complexity to approach the same solution \citep{Gadgil2020}.
 
 \section{Method}
 It was decided that 3 algorithms would be implemented to train our agents so that the different approaches could be compared and contrasted for efficacy against this particular problem. The 3 algorithms selected were; REINFORCE, a traditional policy gradient method chosen as a baseline method, and the more modern DQN and PPO algorithms. To give a better understanding of our chosen method PPO, we will first introduce TRPO, as this is where this method is derived from. 
@@ -162,7 +158,7 @@ Where $r_t(\theta)$ is identical to the probability ratio from TRPO ($\frac{\pi_
 PPO was chosen for the proposed domain as it is relatively simple to implement, provides relatively good sample efficiency over other policy gradient methods, and is not particularly sensitive to hyperparameters \citep{schulman2017proximal}.
 \subsection{DQN}
 DQN (Deep-Q Networks) \citep{dqn} were the first foray into combining traditional reinforcement learning methods, Q-Learning \citep{qlearning}, with deep neural networks. Revolutionary at the time, it allowed an agent to approximate the Q values of previously intractable large state/action spaces. Using these networks in place of the policy $\pi(s,a)$, or value $q(s,a)$ functions.\\\newline
-They work by feeding in the observable information of the environment, then training the network parameters via gradient descent with the aim of minimising a chosen loss function, typically the Mean Squared Error. The algorithm functions similarly to function approximated Q-learning, however it also incorporates a Replay memory and a target network. A target network is employed to tackle the instability of the algorithm caused by the presence of off-policy learning, function approximation and bootstrapping simulataneously. This is know as the deadly triad \citep{deadlytriad}. DQN addresses this by using a two separate networks, learning is performed from the target network onto the local network, and then the target network is updated periodically which improves the stability of the learning. The Replay memory is used to store all transitions $(S_{t},A_{t},R_{t},S_{t+1})$ encountered in the environment, then periodically a batch is sampled from these stored transitions and used to perform an update on the local network parameters, defined as:
+Observations from the environment are fed into the network, then training is performed via gradient descent with the aim of minimising a chosen loss function, typically Mean Squared Error. The algorithm functions similarly to Q-learning, however it also incorporates a replay buffer, target network for loss stability and function approximation for large state-action spaces. The target network is employed to provide a target for optimization as the algorithm suffers from instability caused by the presence of off-policy learning, function approximation and bootstrapping simulataneously. This is know as the deadly triad \citep{deadlytriad}. DQN addresses this by using two separate networks; learning is performed with the prediction network, and then the target network is synchronised periodically. The replay buffer is used to store all transitions $(S_{t},A_{t},R_{t},S_{t+1})$ encountered in the environment, then at every timestep a batch is sampled from these stored transitions and used to perform an update on prediction network parameters, defined as:
 \begin{equation}
 \begin{aligned}
     &\text{Set} y_{j} = 
@@ -174,7 +170,7 @@ They work by feeding in the observable information of the environment, then trai
 \end{aligned}
 \end{equation}
 In which every $C$ steps the target network $\theta_{2}$ is updated to the local network $\theta_{1}$.\\\newline
-DQN was chosen for its historical significance, as it has led to many further improvements in modern reinforcement learning, such as the direct descendant \citet{rainbow} an amalgamation of many individual improvements to DQN, which was state of the art for its time, or any other deep reinforcement learning method which have built of the work of \citet{dqn}. 
+DQN was chosen for its historical significance, as it has led to many further improvements in modern reinforcement learning, such as the direct descendant \citet{rainbow} an amalgamation of many individual improvements to DQN, which was state of the art for its time, or any other deep reinforcement learning method which have built of the work of \citet{dqn}. In addition to this it enjoys fast convergence and low sample complexity. 
 \subsection{REINFORCE}
 The final method we chose for this environment was REINFORCE \citep{williams1992simple}. REINFORCE is a traditional policy gradient method, but there are conflicting opinions about how exactly it should be implemented, possibly because as \citet{williams1992simple} defines it is fairly vague. The update function for network parameters $\theta$ is defined as \citep{10.5555/3312046}:
 \begin{equation}
@@ -188,7 +184,8 @@ Notice that unlike PPO, this update method only takes into account current polic
 The conflict surrounding implementation details for REINFORCE is with regard to the frequency of updates. Some accounts \citep{10.5555/3312046} suggest updates to the network should be done at every timestep, Others \citep{silver2015} suggest updates on some time horizon $T$, and \citet{williams1992simple} suggests a number of update points, including per-episode (i.e. traditional Monte-Carlo) updates. We chose to implement REINFORCE with per-episode updates, and no baseline. \\\newline
 Using REINFORCE as a baseline policy gradient method, we are able to compare the results of our more modern PPO and DQN algorithms.
 \section{Results}
-Algorithms were coded in base PyTorch \citep{NEURIPS2019_9015}. Due to time constraints, Bayesian Optimization was not carried out to discover optimal hyperparameters. As a result, hyperparameters were sourced from the original papers, or by consulting other online implementations and heuristic search. We make no claim that the hyperparameters used in the below experiments are optimal. Algorithms were run 10 times, and the graphs below are the average of these runs. Linear interpolation was used to fit data points per run to the average run length. Full graphs for every run can be found in Appendix X. 
+Algorithms were coded in base PyTorch \citep{NEURIPS2019_9015}. Due to time constraints, Bayesian Optimization was not carried out to discover optimal hyperparameters. As a result, hyperparameters were sourced from the original papers, or by consulting other online implementations and heuristic search. We make no claim that the hyperparameters used in the below experiments are optimal. Algorithms were run 10 times, and the graphs below are the average of these runs. Linear interpolation was used to fit data points per run to the average run length. Full graphs for every run can be found in Appendix \ref{runs}. \\\newline
+Full details of methodology and hyperparameter choices can be found in Appendices \ref{method} and \ref{specifics} respectively. 
 \subsection{PPO}
 PPO solved the Lunar Lander environment in an average of 608 episodes with a standard deviation of 102.6:
 \begin{figure}[H]
@@ -219,14 +216,11 @@ Secondly, we have a non-stationary target for optimization; the target network, 
 Another feature of note is the distinction between episode lengths seen between Figures \ref{ppo} and \ref{dqn} for PPO and DQN respectively. We see that at its peak, PPO solution times are almost half the length of DQN. Moreover, if we again reference Appendix \ref{runs}, we see that episode lengths for PPO ramp up much more slowly than DQN. It appears that DQN is quickly finding what is arguably a suboptimal policy - slow landings with hovering, contrasted to what appears to be a more direct approach by PPO. The difference in speed can clearly be seen in the demonstration video supplied. This can be attributed to the Q-learning update, which simply takes the max over available actions. A max over noisy Q-value estimates supplied by the neural network is likely to result in overestimation bias, a property which has been demonstrated in Q-learning \citep{thrun1993issues,hasselt2010double}, and is exacerbated by the use of function approximators. Overestimation of the `hovering' behaviour seen with the DQN is likely causing the repetition of this behaviour and the lack of exploration in policy space.\\\newline
 The behaviour of REINFORCE in this scenario is what we expected, showing a trend of high variance. This variance is mainly due to the Monte-Carlo episodic nature of the updates. Unlike Temporal Difference methods \citep{tesauro1995temporal}, which use some portion of true sampled returns in addition to a bootstrap, Monte-Carlo methods use the true sample return as an update. As a result, updates will vary greatly as per-episode variance is high, and as such it is a fairly unstable learning method. REINFORCE is a true online method, which does not take into account the previous policy or any previous experience, and this is likely why we see REINFORCE converge on some runs and get stuck in local maxima on others.  
 \section{Future Work}
-The hyperparameters that have been used for each of the algorithms in this project may not be optimal, as has been previously mentioned. This is one area that could certainly be improved given more time. This could be done by applying a Bayesian Optimisation method, an approach that uses Bayes theorum to build a probibalistic model to optimise the objective function. This allows for selection of the hyperparemeters with the highest likelihood of effectiveness and can dramatically improve performance.
-
+Given more time, more rigorous experimentation procedures would be followed, such as bayesian optimisation for hyperparameter tuning, and implementing pruning algorithms to determine optimal network architecture. Secondly, it would be interesting to apply some of the code-level changes seen in OpenAI's PPO implementation in Stable Baselines that are not mentioned in the paper. Baselines makes some non-trivial code-level optimisations such as value function clipping, reward scaling, orthogonal network initialisation and layer scaling which significantly improve performance, the likes of which are not discussed in the original paper \citep{engstrom2019implementation}, and may help us eke out some additional efficiency.
 As DQN was introduced many years ago now, there has since been considerable work spent analysing and improving the algorithm. For future work we would seek to implement the much improved and much more complicated state of the art improvement, Rainbow \citep{rainbow}, an algorithm built from six individual improvements appended and combined with DQN. Work has been performed analysing Rainbow and found that it is a large improvement over base DQN in our chosen environment. Then additionally, among the included improvements, distributional RL \citep{distributionalrl} was the most necessary within this environment \cite{revisitingrainbow}. This is something we would like to examine and affirm in future work. 
 
 \section{Personal Experience}
-Overall the team felt very positive about the project. Positive responses from all members indicate that completion of the works has deepened knowledge of reinforcement learning methods, while allowing us to work on a fun and challenging problem. The research completed to aid choosing appropriate algorithms gave us a deeper insight into how the field has developed over time and some of the benefits and drawbacks to different approaches. The team-working experience also ran very smoothly, with no conflicts and everybody participating eagerly to complete their allotted tasks and help each other out along the way.
-
-Specific difficulties faced during algorithm development were related mostly to the learning curve associated with PyTorch. The autograd engine is rather complex and takes some work to become proficient in its use. Understanding where to use commands such as, \emph{$torch.no_grad()$}, or how the \emph{$optimizer.step()$} and \emph{$loss.backward()$} operate, and are related, are specific pain points. Memory management is also hard to get-to-grips with, one team member reported receiving many memory leaks in which the cause could not be ascertained, and so had to restart to clear the issue. The general view is that 20\% of the effort was understanding the algorithm, and 80\% was getting over the learning curve associated with PyTorch.
+Overall the team felt very positive about the project. Positive responses from all members indicate that completion of the works has deepened knowledge of reinforcement learning methods, while allowing us to work on a fun and challenging problem. The research completed to aid choosing appropriate algorithms gave us a deeper insight into how the field has developed over time and some of the benefits and drawbacks to different approaches. The team-working experience also ran very smoothly, with no conflicts and everybody participating eagerly to complete their allotted tasks and help each other out along the way. Specific difficulties faced during algorithm development were related mostly to the learning curve associated with PyTorch. The autograd engine is rather complex and takes some work to become proficient in its use. Understanding where to use commands such as, \emph{$torch.no\_grad()$}, or how the \emph{$optimizer.step()$} and \emph{$loss.backward()$} operate, and are related, are specific pain points. Memory management is also hard to get-to-grips with, one team member reported receiving many memory leaks in which the cause could not be ascertained, and so had to rewrite code to clear the issue. The general view is that 20\% of the effort was understanding the algorithm, and 80\% was technicalities associated with PyTorch.
 
 
 \bibliography{references}
@@ -253,25 +247,51 @@ Specific difficulties faced during algorithm development were related mostly to 
   \includegraphics[scale=0.35]{4.png}
   \caption{(left-to-right) Average reward, episode length and loss for REINFORCE.}
 \end{figure}
-
+\section{Methodology}\label{method}
+Algorithms were run for a maximum of 5000 epochs, and were considered solved when the running 100 episode average reached an average reward of over 200, the point at which the environment is considered solved according to the specification. Each method was run 10 times and an average was taken. Logs were extracted from tensorboard.
 \section{Hyperparameter and Architecture Choices}\label{specifics}
-\subsection*{PPO}
-
-\subsection*{DQN}
-Hyperparameters used with DQN were as follows:
-\begin{itemize}
-    \item A decay rate of $\gamma=0.99$  
-    \item An initial exploration rate of $\epsilon=1.0$ 
-    \item A mininimum exploration rate of 0.01 
-    \item A rate of linear exploration decrease of $1*10^{-4}$ 
-    \item A batchSize of 64 
-    \item A Learning rate of 0.0005
-    \item A target network update rate of every 4 environment steps
-    \item A batch sampling rate rate of every environment step
-\end{itemize}
 The network architecture used was chosen in accordance to recommendations in \citep{revisitingrainbow}.
-We used two fully connected layers with 256 neurons and relu activations, followed by the final output layer. 
+We used two fully connected layers with 256 neurons and relu activations, followed by the final output layer. We use the same network architecture for all methods to maintain consistency between experiments (PPO actor network and REINFORCE are the same structure, critic network for PPO is only 1 layer deep of the same size).
+\subsection*{PPO}
+\begin{table}[H]
+  \centering
+  \begin{tabular}{c | c }
+    \textbf{Hyperparameter} & \textbf{Value} \\\hline
+    discount factor $\gamma$ & 0.99 \\
+    time horizon $T$ & 2048 \\
+    batch size & 2048 \\
+    learning rate (actor) & \num{3e-4}\\
+    learning rate (critic) & \num{1e-3}\\
+    clip factor $\epsilon$ & 0.2 \\
+    gradient steps per batch & 80
+  \end{tabular}
+\end{table}
+\subsection*{DQN}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{c | c }
+    \textbf{Hyperparameter} & \textbf{Value} \\\hline
+    discount factor $\gamma$ & 0.99 \\
+    $\epsilon$ (start) & 1.0 \\
+    $\epsilon$ (end) & 0.01 \\
+    $\epsilon$ (decay) & \num{1e-4} \\
+    batch size & 64 \\
+    learning rate $\alpha$ & \num{5e-4}\\
+    target network sync & 4 frames \\
+    replay size & 100,000 \\
+    warm start steps & 64
+  \end{tabular}
+\end{table} 
 
 \subsection*{REINFORCE}
+\begin{table}[H]
+  \centering
+  \begin{tabular}{c | c }
+    \textbf{Hyperparameter} & \textbf{Value} \\\hline
+    discount factor $\gamma$ & 0.99 \\
+    learning rate $\alpha$ & \num{3e-4}
+  \end{tabular}
+\end{table}
 \end{document}
 
