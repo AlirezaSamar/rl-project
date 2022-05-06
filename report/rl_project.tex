@@ -227,8 +227,9 @@ The hyperparameters that have been used for each of the algorithms in this proje
 As DQN was introduced many years ago now, there has since been considerable work spent analysing and improving the algorithm. For future work we would seek to implement the much improved and much more complicated state of the art improvement, Rainbow \citep{rainbow}, an algorithm built from six individual improvements appended and combined with DQN. Work has been performed analysing Rainbow and found that it is a large improvement over base DQN in our chosen environment. Then additionally, among the included improvements, distributional RL \citep{distributionalrl} was the most necessary within this environment \cite{revisitingrainbow}. This is something we would like to examine and affirm in future work. 
 
 \section{Personal Experience}
-A discussion of your personal experience with the project, such as
-difficulties or pleasant surprises you encountered while completing it.
+Overall the team felt very positive about the project. Positive responses from all members indicate that completion of the works has deepened knowledge of reinforcement learning methods, while allowing us to work on a fun and challenging problem. The research completed to aid choosing appropriate algorithms gave us a deeper insight into how the field has developed over time and some of the benefits and drawbacks to different approaches. The team-working experience also ran very smoothly, with no conflicts and everybody participating eagerly to complete their allotted tasks and help each other out along the way.
+
+Specific difficulties faced during algorithm development were related mostly to the learning curve associated with PyTorch. The autograd engine is rather complex and takes some work to become proficient in its use. Understanding where to use commands such as, \emph{$torch.no_grad()$}, or how the \emph{$optimizer.step()$} and \emph{$loss.backward()$} operate, and are related, are specific pain points. Memory management is also hard to get-to-grips with, one team member reported receiving many memory leaks in which the cause could not be ascertained, and so had to restart to clear the issue. The general view is that 20\% of the effort was understanding the algorithm, and 80\% was getting over the learning curve associated with PyTorch.
 
 
 \bibliography{references}
